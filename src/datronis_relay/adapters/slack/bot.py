@@ -55,20 +55,20 @@ class SlackAdapter:
         self._register_handlers()
 
     def _register_handlers(self) -> None:
-        @self._app.event("message")  # type: ignore[untyped-decorator]
+        @self._app.event("message")
         async def _on_message(event: dict[str, Any], say: Any) -> None:
             await self._handle_event(event, say)
 
-        @self._app.event("app_mention")  # type: ignore[untyped-decorator]
+        @self._app.event("app_mention")
         async def _on_mention(event: dict[str, Any], say: Any) -> None:
             await self._handle_event(event, say)
 
     async def run_forever(self) -> None:
         log.info("slack.adapter.start")
         try:
-            await self._handler.start_async()
+            await self._handler.start_async()  # type: ignore[no-untyped-call]
         finally:
-            await self._handler.close_async()
+            await self._handler.close_async()  # type: ignore[no-untyped-call]
             log.info("slack.adapter.stop")
 
     def build_reply_channel(self, channel_ref: str) -> ReplyChannel:

@@ -8,7 +8,6 @@ from pathlib import Path
 import structlog
 from telegram import Document, PhotoSize, Update
 from telegram.ext import (
-    Application,
     ApplicationBuilder,
     CommandHandler,
     ContextTypes,
@@ -65,7 +64,7 @@ class TelegramAdapter:
         self._max_bytes = max_attachment_bytes
         self._temp_dir.mkdir(parents=True, exist_ok=True)
 
-        self._app: Application = ApplicationBuilder().token(token).concurrent_updates(True).build()
+        self._app = ApplicationBuilder().token(token).concurrent_updates(True).build()
         self._register_handlers()
 
     def _register_handlers(self) -> None:

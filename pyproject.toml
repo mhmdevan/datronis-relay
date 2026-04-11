@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "python-telegram-bot>=21.0,<22",
     "slack-bolt>=1.18,<2",
+    "aiohttp>=3.9,<4",
     "claude-agent-sdk>=0.0.14",
     "pydantic>=2.6,<3",
     "structlog>=24.1",
