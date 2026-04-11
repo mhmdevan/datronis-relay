@@ -27,6 +27,9 @@ coverage.xml
 .env.*
 !.env.example
 
+# Local-only planning docs (not published)
+datronis-relay-roadmap.md
+
 # SQLite (Phase 2+)
 *.sqlite
 *.sqlite3

@@ -365,9 +365,8 @@ scheduler:
 
 ---
 
-## 12. What's next (Phase 2.5)
+## 12. What's next (Phase 2.5 / v1.1.0)
 
 - **Voice input** (Whisper) + optional TTS replies
 - **Multi-server execution backend** (SSH, Docker exec) with per-server permissions
 - **Secrets vault** for server credentials
-- See [`../datronis-relay-roadmap.md`](../datronis-relay-roadmap.md) for the full plan.

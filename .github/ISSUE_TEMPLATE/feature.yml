@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for thinking about what datronis-relay could do next. Please read the [roadmap](../../datronis-relay-roadmap.md) first — your idea may already be planned.
+        Thanks for thinking about what datronis-relay could do next. Please check the project's release notes and existing issues first — your idea may already be planned or in progress.
 
         **This project is opinionated about scope creep.** Features that grow the maintenance surface without pulling their weight are declined by default. The more evidence you can show of real demand, the more likely it is to land.
 
@@ -50,7 +50,7 @@ body:
     attributes:
       label: Demand signal
       description: |
-        Per the roadmap, new adapters and backends need evidence that more than one person needs them.
+        New adapters and backends need evidence that more than one person needs them.
         Are there other users asking for this? Is there a workflow in your team that requires it?
 
   - type: checkboxes
@@ -58,7 +58,7 @@ body:
     attributes:
       label: Pre-flight checklist
       options:
-        - label: I read the roadmap and this isn't already planned.
+        - label: I checked existing issues and this isn't already planned.
           required: true
-        - label: I'm not asking for a feature that was explicitly listed as a non-goal.
+        - label: I'm not asking for a feature that the project has explicitly declared out of scope.
           required: true

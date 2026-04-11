@@ -28,7 +28,7 @@ datronis-relay is a self-hosted service that lets authorized users drive a Claud
 
 ## What's next
 
-The [roadmap](https://github.com/mhmdevan/datronis-relay/blob/main/datronis-relay-roadmap.md) covers Phase 2.5 (voice + multi-server execution + secrets vault) and beyond. v1.0.0 is a freeze of the current surface — Phase 2.5 will ship as **v1.1.0** under the SemVer commitment.
+v1.0.0 is a freeze of the current surface. The next minor (**v1.1.0**) adds voice input via Whisper, a multi-server execution backend (SSH / Docker exec) with per-server permissions, and an age-encrypted secrets vault for server credentials — all under the SemVer commitment documented in [`versioning.md`](./versioning.md).
 
 ## License
 

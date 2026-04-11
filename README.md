@@ -644,7 +644,6 @@ datronis-relay/
 ├── 📄 CONTRIBUTING.md                 — dev setup, coding standards
 ├── 📄 CODE_OF_CONDUCT.md              — Contributor Covenant v2.1
 ├── 📄 SECURITY.md                     — private reporting process, SLA
-├── 📄 datronis-relay-roadmap.md       — full roadmap, DoD, KPIs, risks
 ├── 🔧 pyproject.toml                  — project metadata, deps, ruff/mypy/pytest config
 ├── 🔧 mkdocs.yml                      — documentation site config
 ├── 🔧 config.example.yaml             — example configuration (copy to config.yaml)
@@ -763,7 +762,6 @@ The full mkdocs-material site is auto-deployed from `docs/` to GitHub Pages on e
 | [`docs/security.md`](./docs/security.md) | STRIDE threat model. Per-threat mitigations with a **Gaps** column. Hardening checklist. |
 | [`docs/release_checklist.md`](./docs/release_checklist.md) | Pre-release, pre-flight, tag, post-release. What NOT to do. |
 | [`docs/changelog.md`](./docs/changelog.md) | Every version. Migration guides for v0.1 → v0.2 → v0.3 → v0.4 → v1.0. |
-| [`datronis-relay-roadmap.md`](./datronis-relay-roadmap.md) | Full roadmap: phases, TODOs, Definition of Done, KPIs, risks. |
 
 ---
 
@@ -780,7 +778,7 @@ The full mkdocs-material site is auto-deployed from `docs/` to GitHub Pages on e
 | Phase 1.1 | `v1.1.0` | Voice (Whisper) + multi-server execution (SSH / Docker) + secrets vault | 🚧 Next |
 | Phase 1.2 | `v1.2.0` | Ecosystem — Discord (demand-gated), scheduled task retries | 📅 Planned |
 
-The full per-phase breakdown, DoD gates, and KPI targets live in [`datronis-relay-roadmap.md`](./datronis-relay-roadmap.md).
+Per-phase breakdown, Definition-of-Done gates, and KPI targets are maintained as internal planning notes and distilled into the per-release sections of [`docs/changelog.md`](./docs/changelog.md).
 
 ---
 
