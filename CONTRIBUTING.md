@@ -5,7 +5,7 @@ Thanks for your interest in contributing. This project takes a small number of c
 ## Quick start
 
 ```bash
-git clone https://github.com/datronis/datronis-relay.git
+git clone https://github.com/mhmdevan/datronis-relay.git
 cd datronis-relay
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"

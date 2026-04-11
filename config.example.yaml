@@ -1,8 +1,30 @@
-# datronis-relay v0.2.0 — example configuration.
+# datronis-relay v1.0.0 — example configuration.
 #
-# Copy this file to config.yaml and fill in your values. Secrets (telegram
-# token, Anthropic key) can live here OR be injected via env vars — env
-# vars always win.
+# Copy this file to config.yaml and fill in your values. Secrets (Telegram
+# token, optional Anthropic key, optional Slack tokens) belong in env vars,
+# not in this file — env vars always override the YAML values.
+#
+# ============================================================================
+# CLAUDE AUTHENTICATION
+# ============================================================================
+# datronis-relay authenticates with Claude through the Claude Agent SDK,
+# which supports TWO mutually-exclusive modes. You do NOT need both.
+#
+#   1) Subscription (Claude Pro / Max / Teams / Enterprise) — RECOMMENDED.
+#      Run `claude login` ONCE on the host where the bot will run; the OAuth
+#      token is saved to $HOME/.claude/ and picked up automatically. No
+#      per-token billing — covered by your Claude subscription. In this mode
+#      you leave ANTHROPIC_API_KEY completely unset.
+#
+#   2) API key — pay-per-token, no subscription required.
+#      Set ANTHROPIC_API_KEY in your .env file. The SDK uses it instead of
+#      the OAuth credentials. Use this only if you don't already pay for
+#      Claude.
+#
+# Both modes require the Claude Code CLI (`claude`) to be on PATH — the
+# Python SDK spawns it as a subprocess. The Docker image installs it for
+# you; systemd users install it once via `npm install -g @anthropic-ai/claude-code`.
+# ============================================================================
 #
 # Env var overrides recognized:
 #   DATRONIS_CONFIG_PATH         — alternate path to this file
@@ -11,7 +33,7 @@
 #   DATRONIS_SLACK_APP_TOKEN     — overrides slack.app_token (also enables slack)
 #   DATRONIS_LOG_LEVEL           — overrides logging.level
 #   DATRONIS_LOG_JSON            — overrides logging.json (true|false)
-#   ANTHROPIC_API_KEY            — read by the SDK itself, not by our config
+#   ANTHROPIC_API_KEY            — optional pay-per-token auth (see above)
 
 telegram:
   enabled: true

@@ -18,7 +18,7 @@ From v1.0.0 onward, the latest minor on `main` is supported. Older majors receiv
 Instead, please use one of the following private channels:
 
 1. **GitHub Private Vulnerability Reporting** — the preferred channel.
-   Open [`Security → Advisories → Report a vulnerability`](https://github.com/datronis/datronis-relay/security/advisories/new) on the repository.
+   Open [`Security → Advisories → Report a vulnerability`](https://github.com/mhmdevan/datronis-relay/security/advisories/new) on the repository.
 
 2. **Email** — a maintainer-monitored address. See the `README.md` or the [`pyproject.toml`](./pyproject.toml) `authors` field for contact information.
 
@@ -60,9 +60,11 @@ The in-depth threat model is in [`docs/security.md`](./docs/security.md) — a S
 
 ## Hardening checklist for self-hosters
 
-- Put secrets in env vars (`DATRONIS_TELEGRAM_BOT_TOKEN`, `DATRONIS_SLACK_*`, `ANTHROPIC_API_KEY`), not in `config.yaml`.
+- Put secrets in env vars (`DATRONIS_TELEGRAM_BOT_TOKEN`, `DATRONIS_SLACK_*`, and — *only if you use the pay-per-token path* — `ANTHROPIC_API_KEY`), not in `config.yaml`.
+- **Authenticate with Claude via `claude login` (subscription)** when possible. The OAuth credentials in `$HOME/.claude/` are scoped to your Claude.ai account and can be revoked from the Claude dashboard without touching the bot. The `ANTHROPIC_API_KEY` path is optional and should only be used when you don't have a subscription.
+- Protect the Claude credentials directory. Under Docker, the `claude_credentials` named volume is only accessible to the `relay` user inside the container. Under systemd, `/var/lib/datronis-relay/home/.claude/` is owned by the `datronis` system user and covered by `ProtectHome=true` + `ReadWritePaths=/var/lib/datronis-relay`.
 - Run under a dedicated non-login user account (see `examples/systemd/datronis-relay.service` for a hardened unit with `NoNewPrivileges`, `ProtectSystem=strict`, `MemoryDenyWriteExecute`).
 - Use `allowed_tools: []` only for trusted users — every other user should have an explicit tool allowlist.
 - Keep `attachments.max_bytes_per_file` conservative; the default is 10 MB.
 - Back up `data/relay.db` regularly (the audit log and cost ledger live there).
-- Rotate your `ANTHROPIC_API_KEY` at least every 90 days.
+- **If you use the API key path:** rotate `ANTHROPIC_API_KEY` at least every 90 days. If you use the subscription path, rotating your Claude.ai password / revoking the OAuth token from the Claude dashboard is the equivalent — do it after any suspected compromise.

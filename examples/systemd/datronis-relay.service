@@ -1,6 +1,6 @@
 [Unit]
 Description=datronis-relay — chat bridge for the Claude Agent SDK
-Documentation=https://github.com/datronis/datronis-relay
+Documentation=https://github.com/mhmdevan/datronis-relay
 After=network-online.target
 Wants=network-online.target
 
@@ -9,12 +9,25 @@ Type=simple
 User=datronis
 Group=datronis
 WorkingDirectory=/opt/datronis-relay
-EnvironmentFile=/etc/datronis-relay/datronis-relay.env
+
+# HOME points inside ReadWritePaths so `claude login` (run once, manually,
+# before enabling the service) can write OAuth credentials to
+# /var/lib/datronis-relay/home/.claude. ProtectHome=true stays enabled
+# because /var/lib is outside the /home, /root, /run/user paths it protects.
+Environment=HOME=/var/lib/datronis-relay/home
+Environment=DATRONIS_CONFIG_PATH=/etc/datronis-relay/config.yaml
+
+# Optional env file — lets operators inject DATRONIS_TELEGRAM_BOT_TOKEN,
+# DATRONIS_SLACK_*, and (optionally) ANTHROPIC_API_KEY without editing the
+# unit. The leading `-` makes the file optional; the service boots fine
+# without it if subscription login is the only auth in use.
+EnvironmentFile=-/etc/datronis-relay/datronis-relay.env
+
 ExecStart=/opt/datronis-relay/venv/bin/datronis-relay
 Restart=on-failure
 RestartSec=5s
 
-# Hardening
+# --- Hardening ---
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

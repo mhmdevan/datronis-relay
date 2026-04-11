@@ -514,14 +514,17 @@ Coverage target **≥ 80%** enforced via `coverage.report.fail_under = 80` in `p
 
 ### Prerequisites
 
-- Python **3.11+**
-- An `ANTHROPIC_API_KEY` (from [console.anthropic.com](https://console.anthropic.com))
-- A Telegram bot token (from [@BotFather](https://t.me/BotFather)) — **and/or** a Slack app (see [`docs/slack_setup.md`](./docs/slack_setup.md))
+- **Python 3.11+**
+- **Node.js 18+ with the Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`. `claude-agent-sdk` spawns it as a subprocess. (The Docker image installs this automatically.)
+- **Claude authentication** — pick ONE:
+  - 🟢 **Recommended:** an active **Claude subscription** (Pro / Max / Teams / Enterprise) plus a one-time `claude login`. OAuth credentials are stored locally, no per-token billing.
+  - 🟡 **Alternative:** an `ANTHROPIC_API_KEY` from [console.anthropic.com](https://console.anthropic.com). Pay-per-token. Use only if you don't already have a Claude subscription.
+- A **Telegram bot token** (from [@BotFather](https://t.me/BotFather)) — **and/or** a Slack app (see [`docs/slack_setup.md`](./docs/slack_setup.md))
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Mohammad-eslamnia/datronis-relay.git
+git clone https://github.com/mhmdevan/datronis-relay.git
 cd datronis-relay
 
 python3.11 -m venv .venv
@@ -537,11 +540,22 @@ cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
+Authenticate with Claude **once** (recommended: subscription login):
+
+```bash
+# 🟢 Option A — subscription login (Claude Pro / Max / Teams / Enterprise)
+claude login
+# → follow the browser or device-code prompt. Leaves credentials in ~/.claude.
+
+# 🟡 Option B — pay-per-token API key (skip `claude login`)
+# Put ANTHROPIC_API_KEY=sk-ant-... into .env instead.
+```
+
 Edit `.env` with your secrets:
 
 ```env
 DATRONIS_TELEGRAM_BOT_TOKEN=123456:ABC-your-bot-token
-ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_API_KEY=sk-ant-...   # optional; leave blank if you ran `claude login`
 # Optional Slack:
 # DATRONIS_SLACK_BOT_TOKEN=xoxb-...
 # DATRONIS_SLACK_APP_TOKEN=xapp-...
@@ -802,7 +816,7 @@ All contributors agree to the [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) (Cont
 
 **Mohammad Eslamnia**
 📧 Contact via GitHub Issues / Private Security Advisories
-🌐 [GitHub](https://github.com/Mohammad-eslamnia)
+🌐 [GitHub](https://github.com/mhmdevan)
 
 Built as a portfolio-grade demonstration of:
 

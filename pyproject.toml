@@ -46,8 +46,8 @@ docs = [
 datronis-relay = "datronis_relay.main:main"
 
 [project.urls]
-Homepage = "https://github.com/datronis/datronis-relay"
-Issues = "https://github.com/datronis/datronis-relay/issues"
+Homepage = "https://github.com/mhmdevan/datronis-relay"
+Issues = "https://github.com/mhmdevan/datronis-relay/issues"
 
 [build-system]
 requires = ["hatchling"]

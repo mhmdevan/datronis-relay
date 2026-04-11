@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/datronis/datronis-relay/security/advisories/new
+    url: https://github.com/mhmdevan/datronis-relay/security/advisories/new
     about: Please use GitHub's private security advisory flow instead of a public issue. See SECURITY.md.
   - name: Questions / usage help
-    url: https://github.com/datronis/datronis-relay/discussions
+    url: https://github.com/mhmdevan/datronis-relay/discussions
     about: Open a discussion. Issues are for bugs and feature requests only.

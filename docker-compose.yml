@@ -1,7 +1,24 @@
+# datronis-relay — compose file.
+#
+# FIRST-TIME SETUP (one-time Claude authentication):
+#
+#   # Option 1 (recommended): subscription login via `claude login`
+#   docker compose build
+#   docker compose run --rm --entrypoint claude relay login
+#   # → follow the URL / device-code prompt in the output
+#   docker compose up -d
+#
+#   # Option 2 (optional): use an API key instead
+#   echo 'ANTHROPIC_API_KEY=sk-ant-...' >> .env
+#   docker compose up -d --build
+#
+# After first-time setup, `docker compose up -d` is all you need — the
+# `claude_credentials` named volume preserves your login across rebuilds.
+
 services:
   relay:
     build: .
-    image: datronis-relay:0.2.0
+    image: datronis-relay:1.0.0
     container_name: datronis-relay
     restart: unless-stopped
     environment:
@@ -9,15 +26,21 @@ services:
       DATRONIS_TELEGRAM_BOT_TOKEN: ${DATRONIS_TELEGRAM_BOT_TOKEN}
       DATRONIS_LOG_LEVEL: ${DATRONIS_LOG_LEVEL:-INFO}
       DATRONIS_LOG_JSON: ${DATRONIS_LOG_JSON:-true}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # Optional Slack tokens — leave blank / unset if you're only using Telegram.
+      DATRONIS_SLACK_BOT_TOKEN: ${DATRONIS_SLACK_BOT_TOKEN:-}
+      DATRONIS_SLACK_APP_TOKEN: ${DATRONIS_SLACK_APP_TOKEN:-}
+      # OPTIONAL: pay-per-token API key. Leave blank if you ran `claude login`
+      # — the SDK will use the OAuth credentials in /home/relay/.claude.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       - ./config.yaml:/etc/datronis-relay/config.yaml:ro
       - relay_data:/var/lib/datronis-relay
-    read_only: true
-    tmpfs:
-      - /tmp
+      - claude_credentials:/home/relay/.claude
     security_opt:
       - no-new-privileges:true
+    tmpfs:
+      - /tmp
 
 volumes:
   relay_data:
+  claude_credentials:

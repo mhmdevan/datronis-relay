@@ -4,6 +4,16 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed (pre-1.0 — will be absorbed into v1.0.0 on tag)
+- **Auth model was documented and packaged wrong.** `claude-agent-sdk` inherits authentication from the Claude Code CLI, which supports BOTH an OAuth subscription login (Pro / Max / Teams / Enterprise via `claude login`) and a pay-per-token `ANTHROPIC_API_KEY`. Earlier docs, `.env.example`, `docker-compose.yml`, and the quickstart presented the API key as required — it is not. The subscription path is now the documented default; the API key is the optional alternative.
+- **Dockerfile was missing the Claude Code CLI.** `claude-agent-sdk` spawns the `claude` Node.js CLI as a subprocess. The previous image only installed the Python package, so the bot would have failed at runtime with "command not found" on the first `/ask`. The Dockerfile now installs Node.js 20 + `@anthropic-ai/claude-code` globally and declares a `VOLUME` at `/home/relay/.claude` so subscription credentials persist across `docker compose down && up` cycles.
+- **`docker-compose.yml`** gains a `claude_credentials` named volume for persistent OAuth tokens, and `ANTHROPIC_API_KEY` is now explicitly optional via `${ANTHROPIC_API_KEY:-}`.
+- **`examples/systemd/datronis-relay.service`** now sets `Environment=HOME=/var/lib/datronis-relay/home` so `claude login` can write credentials under `ReadWritePaths` while `ProtectHome=true` continues to block `/home`, `/root`, and `/run/user`. Also adds `EnvironmentFile=-/etc/datronis-relay/datronis-relay.env` (optional) and an explicit `DATRONIS_CONFIG_PATH` entry.
+- **`.env.example`** leads with the subscription path and explicitly marks `ANTHROPIC_API_KEY` as optional with a block comment explaining the two auth modes.
+- **`config.example.yaml` header** now documents the two auth modes.
+- **`docs/quickstart.md`** has a new "Authenticate with Claude (one-time)" section for each deployment path (local venv, Docker, systemd), leading with `claude login` and listing the API key as the alternative.
+- **`SECURITY.md`** hardening checklist updated: `ANTHROPIC_API_KEY` rotation is now conditional on "*if you use the API key path*"; subscription-path users revoke via the Claude.ai dashboard.
+
 ## [1.0.0] — 2026-04-11
 
 **This is the API freeze.** From this release on, the public surface listed in [`api_reference.md`](./api_reference.md) is guaranteed stable under SemVer. Breaking changes to any public symbol require a v2.0.0 bump and a one-minor-cycle deprecation window.
