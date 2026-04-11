@@ -1,0 +1,104 @@
+# datronis-relay v0.2.0 — example configuration.
+#
+# Copy this file to config.yaml and fill in your values. Secrets (telegram
+# token, Anthropic key) can live here OR be injected via env vars — env
+# vars always win.
+#
+# Env var overrides recognized:
+#   DATRONIS_CONFIG_PATH         — alternate path to this file
+#   DATRONIS_TELEGRAM_BOT_TOKEN  — overrides telegram.bot_token
+#   DATRONIS_SLACK_BOT_TOKEN     — overrides slack.bot_token (also enables slack)
+#   DATRONIS_SLACK_APP_TOKEN     — overrides slack.app_token (also enables slack)
+#   DATRONIS_LOG_LEVEL           — overrides logging.level
+#   DATRONIS_LOG_JSON            — overrides logging.json (true|false)
+#   ANTHROPIC_API_KEY            — read by the SDK itself, not by our config
+
+telegram:
+  enabled: true
+  bot_token: "REPLACE_ME"
+
+# Slack is disabled by default. Set enabled: true and fill in both tokens
+# to run Slack alongside (or instead of) Telegram. See docs/slack_setup.md
+# for the full Slack app configuration walkthrough.
+slack:
+  enabled: false
+  bot_token: ""   # xoxb-...
+  app_token: ""   # xapp-... (Socket Mode app-level token, connections:write scope)
+
+claude:
+  model: "claude-sonnet-4-6"
+  max_turns: 10
+
+storage:
+  # SQLite file path. Parent directories are created automatically.
+  sqlite_path: "./data/relay.db"
+
+logging:
+  level: "INFO"
+  json: true
+
+metrics:
+  enabled: false
+  host: "127.0.0.1"
+  port: 9464
+
+# Scheduled task worker. On by default. The background worker polls every
+# poll_interval_seconds, claims up to batch_limit due tasks per tick, and
+# dispatches each through the same MessagePipeline used for realtime
+# messages (so rate limits, cost tracking, and error mapping all apply).
+scheduler:
+  enabled: true
+  poll_interval_seconds: 30
+  max_tasks_per_user: 50
+  batch_limit: 10
+
+# File attachments (documents + images). Telegram downloads them natively;
+# Slack downloads via an authed GET of the file's url_private. Temp files
+# are cleaned up by the pipeline's finally block after each message —
+# never left around.
+attachments:
+  enabled: true
+  max_bytes_per_file: 10485760   # 10 MB
+  temp_dir: "./data/attachments"
+
+# Multi-user allowlist. Each user id MUST be namespaced as
+# "<platform>:<platform_uid>" — the adapter constructs the same shape
+# when a message arrives, so the lookup only matches on exact equality.
+# Supported platforms: "telegram", "slack".
+users:
+  - id: "telegram:123456789"
+    display_name: "Owner (Telegram)"
+    # Empty list = no tool restriction (SDK default).
+    # Non-empty list = pass-through to ClaudeAgentOptions.allowed_tools.
+    allowed_tools: ["Read", "Write", "Bash"]
+    rate_limit:
+      per_minute: 20
+      per_day: 1000
+
+  - id: "slack:U0XXXXXXX"
+    display_name: "Owner (Slack)"
+    allowed_tools: ["Read", "Write", "Bash"]
+    rate_limit:
+      per_minute: 20
+      per_day: 1000
+
+  - id: "telegram:987654321"
+    display_name: "Teammate (read-only)"
+    allowed_tools: ["Read"]
+    rate_limit:
+      per_minute: 5
+      per_day: 100
+
+cost:
+  # Illustrative prices — update to whatever Anthropic publishes now.
+  # Numbers are USD per 1,000,000 tokens.
+  pricing:
+    claude-sonnet-4-6:
+      input_usd_per_mtok: 3.00
+      output_usd_per_mtok: 15.00
+    claude-opus-4-6:
+      input_usd_per_mtok: 15.00
+      output_usd_per_mtok: 75.00
+    claude-haiku-4-5-20251001:
+      input_usd_per_mtok: 1.00
+      output_usd_per_mtok: 5.00

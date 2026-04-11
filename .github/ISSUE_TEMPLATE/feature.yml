@@ -1,0 +1,64 @@
+name: Feature request
+description: Suggest a new capability or an improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for thinking about what datronis-relay could do next. Please read the [roadmap](../../datronis-relay-roadmap.md) first — your idea may already be planned.
+
+        **This project is opinionated about scope creep.** Features that grow the maintenance surface without pulling their weight are declined by default. The more evidence you can show of real demand, the more likely it is to land.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the user you are (solo dev, DevOps oncall, etc.) and the task that's currently awkward or impossible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Be concrete.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: What else could solve this problem? Why is your proposal better?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which layer is this in?
+      options:
+        - New adapter (Discord, etc.)
+        - New command
+        - New execution backend (SSH, Docker, etc.)
+        - Config / UX polish
+        - Observability / metrics
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: demand
+    attributes:
+      label: Demand signal
+      description: |
+        Per the roadmap, new adapters and backends need evidence that more than one person needs them.
+        Are there other users asking for this? Is there a workflow in your team that requires it?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I read the roadmap and this isn't already planned.
+          required: true
+        - label: I'm not asking for a feature that was explicitly listed as a non-goal.
+          required: true

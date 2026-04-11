@@ -1,0 +1,84 @@
+site_name: datronis-relay
+site_description: Talk to and control your servers from chat platforms via the Claude Agent SDK.
+site_url: https://datronis.github.io/datronis-relay/
+repo_url: https://github.com/datronis/datronis-relay
+repo_name: datronis/datronis-relay
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/chat-processing
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Quickstart: quickstart.md
+      - Slack setup: slack_setup.md
+  - Reference:
+      - API reference: api_reference.md
+      - Versioning & deprecation: versioning.md
+      - Performance: performance.md
+      - Security model (STRIDE): security.md
+  - Development:
+      - Release checklist: release_checklist.md
+      - Changelog: changelog.md
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/datronis/datronis-relay
+
+copyright: Copyright &copy; 2026 datronis-relay maintainers — MIT License

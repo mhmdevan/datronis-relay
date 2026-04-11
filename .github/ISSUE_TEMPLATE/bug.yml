@@ -1,0 +1,81 @@
+name: Bug report
+description: Something isn't working as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out the fields below — the more context you can give, the faster we can help.
+
+        **If this is a security vulnerability, please STOP and read [`SECURITY.md`](../SECURITY.md) instead.** Do not file it as a public issue.
+
+  - type: input
+    id: version
+    attributes:
+      label: datronis-relay version
+      description: Output of `pip show datronis-relay` or the `version` field in `pyproject.toml`.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      description: Output of `python --version`.
+      placeholder: "Python 3.11.7"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Which adapter is affected?
+      multiple: true
+      options:
+        - Telegram
+        - Slack
+        - Scheduler (background worker)
+        - Core (all adapters)
+        - Other / unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, what you expected, and what you saw instead.
+      placeholder: |
+        I sent /schedule 5m run tests in a DM, and ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact, minimal steps. A failing test case is ideal.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste the JSON log lines around the bug. Include the `correlation_id` if you can find it.
+      render: json
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and this isn't already reported.
+          required: true
+        - label: This is NOT a security vulnerability (I would use `SECURITY.md` if it were).
+          required: true

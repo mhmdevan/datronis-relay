@@ -1,0 +1,122 @@
+[project]
+name = "datronis-relay"
+version = "1.0.0"
+description = "Self-hosted bridge that lets you control servers from chat platforms via the Claude Agent SDK."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "datronis maintainers" }]
+keywords = ["claude", "telegram", "chat-ops", "devops", "bot", "agent-sdk"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Chat",
+    "Topic :: System :: Systems Administration",
+]
+
+dependencies = [
+    "python-telegram-bot>=21.0,<22",
+    "slack-bolt>=1.18,<2",
+    "claude-agent-sdk>=0.0.14",
+    "pydantic>=2.6,<3",
+    "structlog>=24.1",
+    "aiosqlite>=0.20",
+    "PyYAML>=6.0",
+    "prometheus-client>=0.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+]
+
+[project.scripts]
+datronis-relay = "datronis_relay.main:main"
+
+[project.urls]
+Homepage = "https://github.com/datronis/datronis-relay"
+Issues = "https://github.com/datronis/datronis-relay/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/datronis_relay"]
+
+# -----------------------------------------------------------------------------
+# Tooling
+# -----------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle / pyflakes
+    "I",             # isort
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "SIM",           # simplify
+    "RUF",           # ruff-specific
+    "N",             # pep8-naming
+    "ASYNC",         # async anti-patterns
+    "TID",           # tidy imports
+    "PL",            # pylint subset
+]
+ignore = [
+    "E501",   # line length handled by formatter
+    "PLR0913" # too many arguments — composition root legitimately has many
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "PLR2004"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+packages = ["datronis_relay"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = [
+    "telegram.*",
+    "slack_bolt.*",
+    "slack_sdk.*",
+    "claude_agent_sdk.*",
+    "prometheus_client.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: integration tests that exercise the full in-process pipeline",
+]
+
+[tool.coverage.run]
+source = ["src/datronis_relay"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 80

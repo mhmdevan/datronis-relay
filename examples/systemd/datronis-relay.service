@@ -1,0 +1,36 @@
+[Unit]
+Description=datronis-relay — chat bridge for the Claude Agent SDK
+Documentation=https://github.com/datronis/datronis-relay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=datronis
+Group=datronis
+WorkingDirectory=/opt/datronis-relay
+EnvironmentFile=/etc/datronis-relay/datronis-relay.env
+ExecStart=/opt/datronis-relay/venv/bin/datronis-relay
+Restart=on-failure
+RestartSec=5s
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/datronis-relay
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

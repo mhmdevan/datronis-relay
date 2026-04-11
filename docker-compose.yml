@@ -1,0 +1,23 @@
+services:
+  relay:
+    build: .
+    image: datronis-relay:0.2.0
+    container_name: datronis-relay
+    restart: unless-stopped
+    environment:
+      DATRONIS_CONFIG_PATH: /etc/datronis-relay/config.yaml
+      DATRONIS_TELEGRAM_BOT_TOKEN: ${DATRONIS_TELEGRAM_BOT_TOKEN}
+      DATRONIS_LOG_LEVEL: ${DATRONIS_LOG_LEVEL:-INFO}
+      DATRONIS_LOG_JSON: ${DATRONIS_LOG_JSON:-true}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    volumes:
+      - ./config.yaml:/etc/datronis-relay/config.yaml:ro
+      - relay_data:/var/lib/datronis-relay
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  relay_data:
