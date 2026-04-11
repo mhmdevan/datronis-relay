@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from datronis_relay.domain.ids import CorrelationId, UserId
 
 
-class AuditEventType(str, Enum):
+class AuditEventType(StrEnum):
     MESSAGE_IN = "msg_in"
     MESSAGE_OUT = "msg_out"
     AUTH_FAIL = "auth_fail"

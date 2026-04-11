@@ -4,8 +4,10 @@ Every adapter's channel must pass this abstract suite. Adding a new adapter
 means adding one subclass at the bottom of this file and providing a fake
 for the underlying transport — the test body never changes.
 """
+
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -54,28 +56,20 @@ class ReplyChannelContract(ABC):
     async def test_send_text_does_not_raise(self, channel: ReplyChannel) -> None:
         await channel.send_text("hello")
 
-    async def test_send_text_at_limit_does_not_raise(
-        self, channel: ReplyChannel
-    ) -> None:
+    async def test_send_text_at_limit_does_not_raise(self, channel: ReplyChannel) -> None:
         await channel.send_text("x" * channel.max_message_length)
 
-    async def test_typing_indicator_enters_and_exits(
-        self, channel: ReplyChannel
-    ) -> None:
+    async def test_typing_indicator_enters_and_exits(self, channel: ReplyChannel) -> None:
         async with channel.typing_indicator():
             pass  # empty body is a valid use
 
-    async def test_typing_indicator_is_reentrant_across_calls(
-        self, channel: ReplyChannel
-    ) -> None:
+    async def test_typing_indicator_is_reentrant_across_calls(self, channel: ReplyChannel) -> None:
         async with channel.typing_indicator():
             pass
         async with channel.typing_indicator():
             pass
 
-    async def test_typing_indicator_does_not_block_sending(
-        self, channel: ReplyChannel
-    ) -> None:
+    async def test_typing_indicator_does_not_block_sending(self, channel: ReplyChannel) -> None:
         async with channel.typing_indicator():
             await channel.send_text("mid-typing")
 
@@ -103,8 +97,6 @@ class TestTelegramReplyChannelSpecifics:
         assert fake_chat.sent == ["hello"]
 
     async def test_typing_task_fires_at_least_once(self) -> None:
-        import asyncio
-
         fake_chat = _FakeTelegramChat()
         channel = TelegramReplyChannel(fake_chat)  # type: ignore[arg-type]
         async with channel.typing_indicator():

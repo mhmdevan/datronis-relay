@@ -34,8 +34,12 @@ class StorageConfig(BaseModel):
 
 
 class LoggingConfig(BaseModel):
+    # `json` is the user-facing YAML key; `json_output` is the Python
+    # attribute name because `json` would shadow pydantic's BaseModel.json()
+    # method.
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     level: str = "INFO"
-    json: bool = True
+    json_output: bool = Field(default=True, alias="json")
 
 
 class MetricsConfig(BaseModel):
@@ -101,8 +105,11 @@ class AppConfig(BaseModel):
     cost: CostConfig = Field(default_factory=CostConfig)
 
     @classmethod
-    def load(cls, path: str | Path | None = None) -> "AppConfig":
-        config_path = Path(path or os.getenv("DATRONIS_CONFIG_PATH", "./config.yaml"))
+    def load(cls, path: str | Path | None = None) -> AppConfig:
+        resolved: str | Path = (
+            path if path is not None else os.getenv("DATRONIS_CONFIG_PATH", "./config.yaml")
+        )
+        config_path = Path(resolved)
         if not config_path.exists():
             raise FileNotFoundError(
                 f"config file not found: {config_path} "

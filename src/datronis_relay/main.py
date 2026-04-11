@@ -70,9 +70,7 @@ def _build_pricing(config: AppConfig) -> dict[str, ModelPricing]:
     }
 
 
-def _build_adapters(
-    config: AppConfig, pipeline: MessagePipeline
-) -> dict[Platform, _ChatAdapter]:
+def _build_adapters(config: AppConfig, pipeline: MessagePipeline) -> dict[Platform, _ChatAdapter]:
     adapters: dict[Platform, _ChatAdapter] = {}
 
     if config.telegram.enabled and config.telegram.bot_token.get_secret_value():
@@ -104,15 +102,14 @@ def _build_adapters(
 
     if not adapters:
         raise RuntimeError(
-            "No adapters are enabled. Enable at least one of telegram/slack "
-            "in config.yaml."
+            "No adapters are enabled. Enable at least one of telegram/slack in config.yaml."
         )
     return adapters
 
 
 async def _run() -> None:
     config = AppConfig.load()
-    configure_logging(level=config.logging.level, json_output=config.logging.json)
+    configure_logging(level=config.logging.level, json_output=config.logging.json_output)
     log.info("datronis.relay.start", version=__version__)
 
     storage = SQLiteStorage(config.storage.sqlite_path)
@@ -177,14 +174,11 @@ async def _run_until_stopped(runnables: list[_Runnable]) -> None:
         stop_event.set()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
+        with contextlib.suppress(NotImplementedError):  # pragma: no cover — Windows
             loop.add_signal_handler(sig, _handle_stop)
-        except NotImplementedError:  # pragma: no cover — Windows
-            pass
 
     runnable_tasks = [
-        asyncio.create_task(r.run_forever(), name=f"runnable-{type(r).__name__}")
-        for r in runnables
+        asyncio.create_task(r.run_forever(), name=f"runnable-{type(r).__name__}") for r in runnables
     ]
     stop_task = asyncio.create_task(stop_event.wait(), name="stop-signal")
 

@@ -121,9 +121,7 @@ class TestAskCommand:
         assert "nothing" in reply.text.lower()
         assert fake_claude.call_count == 0
 
-    async def test_allowed_tools_are_forwarded_to_claude(
-        self, fake_claude: FakeClaude
-    ) -> None:
+    async def test_allowed_tools_are_forwarded_to_claude(self, fake_claude: FakeClaude) -> None:
         router, _ = _router(fake_claude)
         user = make_user(allowed_tools=["Read", "Bash"])
         reply = await router.dispatch(make_message("hi"), user)
@@ -147,9 +145,7 @@ class TestAskCommand:
 
 
 class TestCostCommand:
-    async def test_cost_command_renders_summary(
-        self, fake_claude: FakeClaude
-    ) -> None:
+    async def test_cost_command_renders_summary(self, fake_claude: FakeClaude) -> None:
         router, _ = _router(fake_claude)
         user = make_user(display_name="Alice")
         # prime the ledger with one ask
@@ -175,9 +171,7 @@ class TestRateLimiting:
         with pytest.raises(RateLimitError, match="minute"):
             await router.dispatch(make_message("three"), user)
 
-    async def test_static_commands_do_not_consume_rate_limit(
-        self, fake_claude: FakeClaude
-    ) -> None:
+    async def test_static_commands_do_not_consume_rate_limit(self, fake_claude: FakeClaude) -> None:
         router, _ = _router(fake_claude)
         user = make_user(per_minute=1, per_day=1000)
         # exhaust nothing with /status or /help

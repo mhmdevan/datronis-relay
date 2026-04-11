@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 
-import pytest
+import structlog
 
 from datronis_relay.core.auth import AuthGuard
 from datronis_relay.core.command_router import CommandRouter
@@ -46,7 +46,6 @@ class _FakeTypingIndicator(AbstractAsyncContextManager[None]):
 
     async def __aenter__(self) -> None:
         self._channel.typing_enter_count += 1
-        return None
 
     async def __aexit__(
         self,
@@ -55,7 +54,6 @@ class _FakeTypingIndicator(AbstractAsyncContextManager[None]):
         tb: TracebackType | None,
     ) -> None:
         self._channel.typing_exit_count += 1
-        return None
 
 
 def _build_pipeline(claude: FakeClaude) -> MessagePipeline:
@@ -63,9 +61,7 @@ def _build_pipeline(claude: FakeClaude) -> MessagePipeline:
     tracker = CostTracker(
         store=store,
         pricing={
-            "claude-sonnet-4-6": ModelPricing(
-                input_usd_per_mtok=3.0, output_usd_per_mtok=15.0
-            )
+            "claude-sonnet-4-6": ModelPricing(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0)
         },
         default_model="claude-sonnet-4-6",
     )
@@ -149,9 +145,7 @@ class TestErrorMapping:
     async def test_rate_limit_exhaustion_surfaces_to_user(self) -> None:
         claude = FakeClaude(script=["ok"])
         store = FakeCostStore()
-        tracker = CostTracker(
-            store=store, pricing={}, default_model="claude-sonnet-4-6"
-        )
+        tracker = CostTracker(store=store, pricing={}, default_model="claude-sonnet-4-6")
         router = CommandRouter(
             claude=claude,
             sessions=SessionManager(InMemorySessionStore()),
@@ -160,9 +154,7 @@ class TestErrorMapping:
         )
         # Build a pipeline whose single user has per_minute=1 so the second
         # dispatch trips the limiter.
-        auth = AuthGuard(
-            users=[make_user(user_id=ALLOWED_USER, per_minute=1, per_day=100)]
-        )
+        auth = AuthGuard(users=[make_user(user_id=ALLOWED_USER, per_minute=1, per_day=100)])
         pipeline = MessagePipeline(auth=auth, router=router)
 
         channel = FakeReplyChannel()
@@ -182,8 +174,6 @@ class TestErrorMapping:
 
 class TestContextvarHygiene:
     async def test_correlation_is_cleared_after_each_call(self) -> None:
-        import structlog
-
         pipeline = _build_pipeline(FakeClaude(script=["ok"]))
         channel = FakeReplyChannel()
 

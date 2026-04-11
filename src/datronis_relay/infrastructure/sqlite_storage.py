@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import aiosqlite
 import structlog
@@ -66,9 +67,7 @@ class SQLiteStorage(
             "CREATE TABLE IF NOT EXISTS schema_version ("
             " version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)"
         )
-        async with db.execute(
-            "SELECT COALESCE(MAX(version), 0) FROM schema_version"
-        ) as cur:
+        async with db.execute("SELECT COALESCE(MAX(version), 0) FROM schema_version") as cur:
             row = await cur.fetchone()
             current: int = int(row[0]) if row is not None else 0
 
@@ -111,8 +110,7 @@ class SQLiteStorage(
             (user_id, now),
         )
         await db.execute(
-            "UPDATE sessions SET status = 'closed' "
-            "WHERE user_id = ? AND status = 'active'",
+            "UPDATE sessions SET status = 'closed' WHERE user_id = ? AND status = 'active'",
             (user_id,),
         )
         await db.execute(
@@ -125,8 +123,7 @@ class SQLiteStorage(
     async def drop(self, user_id: UserId) -> None:
         db = self._require_db()
         await db.execute(
-            "UPDATE sessions SET status = 'closed' "
-            "WHERE user_id = ? AND status = 'active'",
+            "UPDATE sessions SET status = 'closed' WHERE user_id = ? AND status = 'active'",
             (user_id,),
         )
         await db.commit()
@@ -230,8 +227,7 @@ class SQLiteStorage(
             params: tuple[object, ...] = (user_id,)
         else:
             query = (
-                "SELECT COALESCE(SUM(cost_usd), 0) FROM cost_ledger "
-                "WHERE user_id = ? AND day >= ?"
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM cost_ledger WHERE user_id = ? AND day >= ?"
             )
             params = (user_id, since_day)
         async with db.execute(query, params) as cur:
@@ -288,9 +284,7 @@ class SQLiteStorage(
             is_active=True,
         )
 
-    async def list_scheduled_tasks(
-        self, user_id: UserId
-    ) -> list[ScheduledTask]:
+    async def list_scheduled_tasks(self, user_id: UserId) -> list[ScheduledTask]:
         db = self._require_db()
         async with db.execute(
             "SELECT id, user_id, platform, channel_ref, prompt, "
@@ -303,9 +297,7 @@ class SQLiteStorage(
             rows = await cur.fetchall()
         return [_row_to_scheduled_task(row) for row in rows]
 
-    async def delete_scheduled_task(
-        self, user_id: UserId, task_id: int
-    ) -> bool:
+    async def delete_scheduled_task(self, user_id: UserId, task_id: int) -> bool:
         db = self._require_db()
         cur = await db.execute(
             "UPDATE scheduled_tasks SET is_active = 0 "
@@ -318,16 +310,13 @@ class SQLiteStorage(
     async def count_scheduled_tasks(self, user_id: UserId) -> int:
         db = self._require_db()
         async with db.execute(
-            "SELECT COUNT(*) FROM scheduled_tasks "
-            "WHERE user_id = ? AND is_active = 1",
+            "SELECT COUNT(*) FROM scheduled_tasks WHERE user_id = ? AND is_active = 1",
             (user_id,),
         ) as cur:
             row = await cur.fetchone()
         return int(row[0]) if row is not None else 0
 
-    async def claim_due_tasks(
-        self, now: datetime, limit: int = 10
-    ) -> list[ScheduledTask]:
+    async def claim_due_tasks(self, now: datetime, limit: int = 10) -> list[ScheduledTask]:
         """Atomically select up to `limit` due tasks and advance their
         `next_run_at` so the next tick can't fire them again."""
         db = self._require_db()
@@ -361,7 +350,8 @@ class SQLiteStorage(
         return self._db
 
 
-def _row_to_scheduled_task(row: tuple) -> ScheduledTask:  # type: ignore[type-arg]
+def _row_to_scheduled_task(row: Any) -> ScheduledTask:
+    """Convert a sqlite3.Row (or any indexable row) into a ScheduledTask."""
     return ScheduledTask(
         id=int(row[0]),
         user_id=UserId(str(row[1])),

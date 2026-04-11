@@ -19,17 +19,18 @@ Usage:
     python scripts/benchmark.py --only sqlite
     python scripts/benchmark.py --only concurrency
 """
+
 from __future__ import annotations
 
 import argparse
 import asyncio
-import statistics
 import sys
 import tempfile
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
 
@@ -41,7 +42,7 @@ from datronis_relay.core.ports import ClaudeClientProtocol
 from datronis_relay.core.rate_limiter import RateLimiter
 from datronis_relay.core.reply_channel import ReplyChannel
 from datronis_relay.core.session_manager import SessionManager
-from datronis_relay.domain.ids import UserId, new_correlation_id
+from datronis_relay.domain.ids import UserId, new_correlation_id, new_session_id
 from datronis_relay.domain.messages import (
     ClaudeRequest,
     MessageKind,
@@ -59,7 +60,6 @@ from datronis_relay.domain.user import User
 from datronis_relay.infrastructure.session_store import InMemorySessionStore
 from datronis_relay.infrastructure.sqlite_storage import SQLiteStorage
 
-
 # -----------------------------------------------------------------------------
 # Fakes
 # -----------------------------------------------------------------------------
@@ -73,9 +73,7 @@ class _ZeroLatencyClaude(ClaudeClientProtocol):
 
     async def _stream(self) -> AsyncIterator[StreamEvent]:
         yield TextChunk(text="ok")
-        yield CompletionEvent(
-            usage=Usage(tokens_in=10, tokens_out=10, cost_usd=0.0)
-        )
+        yield CompletionEvent(usage=Usage(tokens_in=10, tokens_out=10, cost_usd=0.0))
 
     async def aclose(self) -> None:
         return None
@@ -132,7 +130,7 @@ class LatencyResult:
     p99_ms: float
 
     @classmethod
-    def from_samples(cls, label: str, samples: list[float]) -> "LatencyResult":
+    def from_samples(cls, label: str, samples: list[float]) -> LatencyResult:
         samples_ms = sorted(s * 1000.0 for s in samples)
         n = len(samples_ms)
         return cls(
@@ -231,12 +229,8 @@ async def bench_dispatch(iterations: int) -> list[LatencyResult]:
     stream_samples = await _time_async(_stream, iterations)
 
     return [
-        LatencyResult.from_samples(
-            "pipeline.process (/help static reply)", static_samples
-        ),
-        LatencyResult.from_samples(
-            "pipeline.process (stream reply, fake claude)", stream_samples
-        ),
+        LatencyResult.from_samples("pipeline.process (/help static reply)", static_samples),
+        LatencyResult.from_samples("pipeline.process (stream reply, fake claude)", stream_samples),
     ]
 
 
@@ -249,8 +243,6 @@ async def bench_sqlite(iterations: int) -> list[LatencyResult]:
             user = UserId("telegram:bench")
 
             # Prime a session row so `get` has something to return.
-            from datronis_relay.domain.ids import new_session_id
-
             await storage.set(user, new_session_id())
 
             async def _session_get() -> None:
@@ -278,8 +270,6 @@ async def bench_sqlite(iterations: int) -> list[LatencyResult]:
                 await storage.list_scheduled_tasks(user)
 
             # claim_due_tasks with a timestamp that never finds anything
-            from datetime import UTC, datetime
-
             past = datetime(2020, 1, 1, tzinfo=UTC)
 
             async def _sched_claim_empty() -> None:
@@ -404,7 +394,7 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    print(f"# datronis-relay benchmarks\n")
+    print("# datronis-relay benchmarks\n")
     print(f"- Iterations per operation: **{args.iterations}**")
     print(f"- Python: {sys.version.split()[0]}")
 

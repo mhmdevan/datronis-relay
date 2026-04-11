@@ -37,9 +37,7 @@ class TestRateLimiter:
         with pytest.raises(RateLimitError, match="daily"):
             await limiter.check(uid, per_minute=60, per_day=3)
 
-    async def test_daily_exhaustion_refunds_the_minute_token(
-        self, limiter: RateLimiter
-    ) -> None:
+    async def test_daily_exhaustion_refunds_the_minute_token(self, limiter: RateLimiter) -> None:
         uid = UserId("u1")
         # exactly 1 token allowed for today
         await limiter.check(uid, per_minute=60, per_day=1)
@@ -57,9 +55,7 @@ class TestRateLimiter:
         # u1 is at its minute cap; u2 must still pass
         await limiter.check(UserId("u2"), per_minute=2, per_day=100)
 
-    async def test_concurrent_callers_are_serialized(
-        self, limiter: RateLimiter
-    ) -> None:
+    async def test_concurrent_callers_are_serialized(self, limiter: RateLimiter) -> None:
         uid = UserId("u1")
 
         async def call() -> bool:

@@ -77,9 +77,7 @@ class TestEventToPlatformMessage:
         assert _event_to_platform_message(self._event(text="<@U12345>   ")) is None
 
     def test_mention_prefix_is_stripped_from_forwarded_text(self) -> None:
-        msg = _event_to_platform_message(
-            self._event(text="<@U12345> restart nginx")
-        )
+        msg = _event_to_platform_message(self._event(text="<@U12345> restart nginx"))
         assert msg is not None
         assert msg.text == "restart nginx"
 

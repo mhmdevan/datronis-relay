@@ -35,13 +35,9 @@ def parse_interval(text: str) -> int:
     unit = match.group(2).lower()
     seconds = value * _MULTIPLIERS_SECONDS[unit]
     if seconds < MIN_INTERVAL_SECONDS:
-        raise ValueError(
-            f"interval too short: {seconds}s (minimum {MIN_INTERVAL_SECONDS}s)"
-        )
+        raise ValueError(f"interval too short: {seconds}s (minimum {MIN_INTERVAL_SECONDS}s)")
     if seconds > MAX_INTERVAL_SECONDS:
-        raise ValueError(
-            f"interval too long: {seconds}s (maximum {MAX_INTERVAL_SECONDS}s)"
-        )
+        raise ValueError(f"interval too long: {seconds}s (maximum {MAX_INTERVAL_SECONDS}s)")
     return seconds
 
 

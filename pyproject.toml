@@ -85,6 +85,13 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "PLR2004"]
+# The router has a natural if/elif chain over commands. Refactoring into
+# a dispatch table would be worse, not better. The 2 in split-count logic
+# is a parser constant, not a magic number.
+"src/datronis_relay/core/command_router.py" = ["PLR0911", "PLR2004"]
+# The `claude_agent_sdk` import is deferred on purpose so unit tests using
+# FakeClaude never need the real SDK installed.
+"src/datronis_relay/infrastructure/claude_client.py" = ["PLC0415"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -100,7 +107,10 @@ module = [
     "slack_sdk.*",
     "claude_agent_sdk.*",
     "prometheus_client.*",
+    "structlog.*",
     "yaml.*",
+    "aiohttp.*",
+    "aiosqlite.*",
 ]
 ignore_missing_imports = true
 

@@ -37,9 +37,7 @@ class TestParseInterval:
         with pytest.raises(ValueError, match="too long"):
             parse_interval(f"{MAX_INTERVAL_SECONDS + 1}s")
 
-    @pytest.mark.parametrize(
-        "bad", ["", "abc", "5", "5 minutes", "-1h", "1y", "m5", "5mm"]
-    )
+    @pytest.mark.parametrize("bad", ["", "abc", "5", "5 minutes", "-1h", "1y", "m5", "5mm"])
     def test_invalid_formats(self, bad: str) -> None:
         with pytest.raises(ValueError, match="invalid interval"):
             parse_interval(bad)

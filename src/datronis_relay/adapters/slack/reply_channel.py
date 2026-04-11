@@ -73,8 +73,8 @@ class SlackChannelReplyChannel(ReplyChannel):
 
 # Re-export in case callers want to compose no-op context managers.
 __all__ = [
-    "SlackReplyChannel",
-    "SlackChannelReplyChannel",
     "SLACK_MAX_MESSAGE_LENGTH",
     "AsyncExitStack",
+    "SlackChannelReplyChannel",
+    "SlackReplyChannel",
 ]

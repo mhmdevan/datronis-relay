@@ -5,6 +5,7 @@ file used to call `AuthGuard.authenticate` / `CommandRouter.dispatch`
 directly; it now calls `pipeline.process(message, channel)` — the same
 code path both the Telegram and Slack adapters use in production.
 """
+
 from __future__ import annotations
 
 from contextlib import AbstractAsyncContextManager
@@ -60,9 +61,7 @@ def _build_pipeline(
     tracker = CostTracker(
         store=store,
         pricing={
-            "claude-sonnet-4-6": ModelPricing(
-                input_usd_per_mtok=3.0, output_usd_per_mtok=15.0
-            )
+            "claude-sonnet-4-6": ModelPricing(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0)
         },
         default_model="claude-sonnet-4-6",
     )

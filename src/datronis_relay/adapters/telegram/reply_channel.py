@@ -43,7 +43,6 @@ class _TelegramTypingIndicator(AbstractAsyncContextManager[None]):
 
     async def __aenter__(self) -> None:
         self._task = asyncio.create_task(self._loop(), name="telegram-typing")
-        return None
 
     async def __aexit__(
         self,
@@ -63,7 +62,7 @@ class _TelegramTypingIndicator(AbstractAsyncContextManager[None]):
             while True:
                 try:
                     await self._chat.send_chat_action(ChatAction.TYPING)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.debug("telegram.typing.failed", error=str(exc))
                 await asyncio.sleep(TYPING_INTERVAL_SECONDS)
         except asyncio.CancelledError:
@@ -100,7 +99,6 @@ class _TelegramBotTypingIndicator(AbstractAsyncContextManager[None]):
 
     async def __aenter__(self) -> None:
         self._task = asyncio.create_task(self._loop(), name="telegram-bot-typing")
-        return None
 
     async def __aexit__(
         self,
@@ -122,7 +120,7 @@ class _TelegramBotTypingIndicator(AbstractAsyncContextManager[None]):
                     await self._bot.send_chat_action(
                         chat_id=self._chat_id, action=ChatAction.TYPING
                     )
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.debug("telegram.typing.failed", error=str(exc))
                 await asyncio.sleep(TYPING_INTERVAL_SECONDS)
         except asyncio.CancelledError:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import mimetypes
 import re
 import uuid
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
@@ -54,11 +55,11 @@ class SlackAdapter:
         self._register_handlers()
 
     def _register_handlers(self) -> None:
-        @self._app.event("message")
+        @self._app.event("message")  # type: ignore[untyped-decorator]
         async def _on_message(event: dict[str, Any], say: Any) -> None:
             await self._handle_event(event, say)
 
-        @self._app.event("app_mention")
+        @self._app.event("app_mention")  # type: ignore[untyped-decorator]
         async def _on_mention(event: dict[str, Any], say: Any) -> None:
             await self._handle_event(event, say)
 
@@ -73,9 +74,7 @@ class SlackAdapter:
     def build_reply_channel(self, channel_ref: str) -> ReplyChannel:
         if not channel_ref:
             raise ValueError("slack channel_ref cannot be empty")
-        return SlackChannelReplyChannel(
-            client=self._app.client, channel_id=channel_ref
-        )
+        return SlackChannelReplyChannel(client=self._app.client, channel_id=channel_ref)
 
     async def _handle_event(self, event: dict[str, Any], say: Any) -> None:
         if _is_bot_event(event):
@@ -103,9 +102,7 @@ class SlackAdapter:
         reply_channel = SlackReplyChannel(say)
         await self._pipeline.process(platform_message, reply_channel)
 
-    async def _download_event_files(
-        self, event: dict[str, Any]
-    ) -> tuple[FileAttachment, ...]:
+    async def _download_event_files(self, event: dict[str, Any]) -> tuple[FileAttachment, ...]:
         files = event.get("files") or []
         if not isinstance(files, list) or not files:
             return ()
@@ -118,9 +115,7 @@ class SlackAdapter:
                 downloads.append(att)
         return tuple(downloads)
 
-    async def _download_file(
-        self, file_info: dict[str, Any]
-    ) -> FileAttachment | None:
+    async def _download_file(self, file_info: dict[str, Any]) -> FileAttachment | None:
         size = int(file_info.get("size") or 0)
         if size and size > self._max_bytes:
             log.warning(
@@ -146,21 +141,23 @@ class SlackAdapter:
         # direct dependency is introduced.
         bot_token = self._app.client.token
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     url,
                     headers={"Authorization": f"Bearer {bot_token}"},
                     timeout=aiohttp.ClientTimeout(total=30),
-                ) as response:
-                    if response.status != 200:
-                        log.warning(
-                            "slack.attachment.download_failed",
-                            status=response.status,
-                            filename=filename,
-                        )
-                        return None
-                    data = await response.read()
-        except Exception as exc:  # noqa: BLE001
+                ) as response,
+            ):
+                if response.status != HTTPStatus.OK:
+                    log.warning(
+                        "slack.attachment.download_failed",
+                        status=response.status,
+                        filename=filename,
+                    )
+                    return None
+                data = await response.read()
+        except Exception as exc:
             log.warning(
                 "slack.attachment.download_error",
                 error=str(exc),
@@ -216,9 +213,7 @@ def _is_bot_event(event: dict[str, Any]) -> bool:
     if event.get("bot_id"):
         return True
     subtype = event.get("subtype")
-    if isinstance(subtype, str) and subtype in ("bot_message", "message_changed"):
-        return True
-    return False
+    return isinstance(subtype, str) and subtype in ("bot_message", "message_changed")
 
 
 def _strip_mention(text: str) -> str:

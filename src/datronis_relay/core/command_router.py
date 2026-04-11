@@ -178,9 +178,7 @@ class CommandRouter:
         argument: str,
     ) -> Reply:
         if self._scheduled_store is None:
-            return StaticReply(
-                "scheduling is disabled on this server. ask the admin to enable it."
-            )
+            return StaticReply("scheduling is disabled on this server. ask the admin to enable it.")
         if not message.channel_ref:
             return StaticReply(
                 "scheduling requires a chat channel — try this from a direct message."
@@ -230,8 +228,7 @@ class CommandRouter:
         lines = ["your scheduled tasks:"]
         for t in tasks:
             lines.append(
-                f"#{t.id}: every {format_interval(t.interval_seconds)} "
-                f"— {_truncate(t.prompt, 60)}"
+                f"#{t.id}: every {format_interval(t.interval_seconds)} — {_truncate(t.prompt, 60)}"
             )
         return StaticReply("\n".join(lines))
 

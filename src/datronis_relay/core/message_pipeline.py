@@ -10,7 +10,6 @@ from datronis_relay.core.command_router import (
     CommandRouter,
     Reply,
     StaticReply,
-    StreamReply,
 )
 from datronis_relay.core.reply_channel import ReplyChannel
 from datronis_relay.domain.errors import RelayError
@@ -62,7 +61,7 @@ class MessagePipeline:
                 error=str(exc),
             )
             await self._safe_send(channel, exc.user_message())
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.exception("pipeline.unexpected", error=str(exc))
             await self._safe_send(
                 channel,
@@ -104,7 +103,7 @@ class MessagePipeline:
         """Like `_send_chunked` but never raises — used in error paths."""
         try:
             await self._send_chunked(channel, text)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error("pipeline.send_failed", error=str(exc))
 
 
@@ -119,7 +118,7 @@ def _cleanup_attachments(message: PlatformMessage) -> None:
     for attachment in message.attachments:
         try:
             attachment.path.unlink(missing_ok=True)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.warning(
                 "pipeline.cleanup_failed",
                 path=str(attachment.path),

@@ -39,9 +39,7 @@ class AdapterRegistry:
     class. Future adapters just register themselves in `main.py`.
     """
 
-    def __init__(
-        self, adapters: dict[Platform, ChatAdapterForDelivery]
-    ) -> None:
+    def __init__(self, adapters: dict[Platform, ChatAdapterForDelivery]) -> None:
         self._adapters = adapters
 
     def get(self, platform: Platform) -> ChatAdapterForDelivery | None:
@@ -77,6 +75,10 @@ class Scheduler:
         self._registry = registry
         self._poll_interval = poll_interval_seconds
         self._batch_limit = batch_limit
+        # Strong references to in-flight dispatch tasks so the event loop
+        # garbage collector doesn't drop them mid-run. Each task removes
+        # itself via a done-callback.
+        self._in_flight: set[asyncio.Task[None]] = set()
 
     async def run_forever(self) -> None:
         log.info("scheduler.start", poll_interval=self._poll_interval)
@@ -84,7 +86,7 @@ class Scheduler:
             while True:
                 try:
                     await self.tick()
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.exception("scheduler.tick_failed", error=str(exc))
                 await asyncio.sleep(self._poll_interval)
         except asyncio.CancelledError:
@@ -96,10 +98,12 @@ class Scheduler:
         now = datetime.now(UTC)
         tasks = await self._store.claim_due_tasks(now=now, limit=self._batch_limit)
         for task in tasks:
-            asyncio.create_task(
+            dispatch_task = asyncio.create_task(
                 self._dispatch(task),
                 name=f"scheduled-task-{task.id}",
             )
+            self._in_flight.add(dispatch_task)
+            dispatch_task.add_done_callback(self._in_flight.discard)
         return len(tasks)
 
     async def _dispatch(self, task: ScheduledTask) -> None:
@@ -113,7 +117,7 @@ class Scheduler:
             return
         try:
             channel = adapter.build_reply_channel(task.channel_ref)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.exception(
                 "scheduler.channel_build_failed",
                 task_id=task.id,

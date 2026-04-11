@@ -65,15 +65,11 @@ class RateLimiter:
         pressure from the daily cap doesn't also burn the minute budget.
         """
         async with self._lock:
-            minute_bucket, day_bucket = self._get_or_create(
-                user_id, per_minute, per_day
-            )
+            minute_bucket, day_bucket = self._get_or_create(user_id, per_minute, per_day)
             if not minute_bucket.consume():
                 raise RateLimitError(f"minute quota exceeded ({per_minute}/min)")
             if not day_bucket.consume():
-                minute_bucket.tokens = min(
-                    minute_bucket.capacity, minute_bucket.tokens + 1.0
-                )
+                minute_bucket.tokens = min(minute_bucket.capacity, minute_bucket.tokens + 1.0)
                 raise RateLimitError(f"daily quota exceeded ({per_day}/day)")
 
     def _get_or_create(

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from datronis_relay.domain.ids import CorrelationId
 
 
-class ErrorCategory(str, Enum):
+class ErrorCategory(StrEnum):
     AUTH = "AUTH"
     RATE_LIMIT = "RATE_LIMIT"
     TIMEOUT = "TIMEOUT"
@@ -59,5 +59,5 @@ class InternalError(RelayError):
     category = ErrorCategory.INTERNAL
 
 
-class NotImplementedCommand(RelayError):
+class NotImplementedCommandError(RelayError):
     category = ErrorCategory.NOT_IMPLEMENTED

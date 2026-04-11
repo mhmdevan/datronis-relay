@@ -72,7 +72,7 @@ class ClaudeAgentClient(ClaudeClientProtocol):
                 total_out += usage_out
         except ClaudeApiError:
             raise
-        except Exception as exc:  # noqa: BLE001 — SDK surface is broad
+        except Exception as exc:  # SDK surface is broad
             log.exception("claude.stream.error", error=str(exc))
             raise ClaudeApiError(
                 f"claude agent sdk failed: {exc}",
@@ -128,8 +128,7 @@ def _build_prompt(text: str, attachments: tuple[FileAttachment, ...]) -> str:
     for att in attachments:
         kind = "image" if att.is_image() else "file"
         lines.append(
-            f"- {att.path}  ({att.filename}, {att.mime_type}, "
-            f"{att.size_bytes} bytes, {kind})"
+            f"- {att.path}  ({att.filename}, {att.mime_type}, {att.size_bytes} bytes, {kind})"
         )
     return "\n".join(lines)
 

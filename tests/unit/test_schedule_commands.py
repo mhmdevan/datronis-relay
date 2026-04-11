@@ -1,7 +1,6 @@
 """Tests for the `/schedule`, `/schedules`, `/unschedule` commands."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from datronis_relay.core.command_router import (
     CommandRouter,
@@ -27,9 +26,7 @@ def _router(scheduled_store: FakeScheduledStore | None) -> CommandRouter:
     tracker = CostTracker(
         store=FakeCostStore(),
         pricing={
-            "claude-sonnet-4-6": ModelPricing(
-                input_usd_per_mtok=3.0, output_usd_per_mtok=15.0
-            )
+            "claude-sonnet-4-6": ModelPricing(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0)
         },
         default_model="claude-sonnet-4-6",
     )
@@ -62,9 +59,7 @@ class TestScheduleCommand:
     async def test_creates_a_task(self) -> None:
         store = FakeScheduledStore()
         router = _router(store)
-        reply = await router.dispatch(
-            _msg("/schedule 1h run the tests"), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 1h run the tests"), make_user())
         assert isinstance(reply, StaticReply)
         assert "scheduled task #1" in reply.text
         assert "1h" in reply.text
@@ -75,25 +70,19 @@ class TestScheduleCommand:
 
     async def test_invalid_interval(self) -> None:
         router = _router(FakeScheduledStore())
-        reply = await router.dispatch(
-            _msg("/schedule 1y do something"), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 1y do something"), make_user())
         assert isinstance(reply, StaticReply)
         assert "invalid interval" in reply.text.lower()
 
     async def test_interval_too_short(self) -> None:
         router = _router(FakeScheduledStore())
-        reply = await router.dispatch(
-            _msg("/schedule 5s ping"), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 5s ping"), make_user())
         assert isinstance(reply, StaticReply)
         assert "too short" in reply.text.lower()
 
     async def test_missing_prompt(self) -> None:
         router = _router(FakeScheduledStore())
-        reply = await router.dispatch(
-            _msg("/schedule 1h"), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 1h"), make_user())
         assert isinstance(reply, StaticReply)
         assert "usage" in reply.text.lower()
 
@@ -103,29 +92,21 @@ class TestScheduleCommand:
         user = make_user()
         # max_scheduled_tasks_per_user is 3 in _router
         for i in range(3):
-            await router.dispatch(
-                _msg(f"/schedule 1h task {i}"), user
-            )
-        reply = await router.dispatch(
-            _msg("/schedule 1h overflow"), user
-        )
+            await router.dispatch(_msg(f"/schedule 1h task {i}"), user)
+        reply = await router.dispatch(_msg("/schedule 1h overflow"), user)
         assert isinstance(reply, StaticReply)
         assert "max" in reply.text.lower()
 
     async def test_without_store_returns_disabled_message(self) -> None:
         router = _router(None)
-        reply = await router.dispatch(
-            _msg("/schedule 1h ping"), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 1h ping"), make_user())
         assert isinstance(reply, StaticReply)
         assert "disabled" in reply.text.lower()
 
     async def test_without_channel_ref_rejected(self) -> None:
         store = FakeScheduledStore()
         router = _router(store)
-        reply = await router.dispatch(
-            _msg("/schedule 1h ping", channel_ref=""), make_user()
-        )
+        reply = await router.dispatch(_msg("/schedule 1h ping", channel_ref=""), make_user())
         assert isinstance(reply, StaticReply)
         assert "chat channel" in reply.text.lower()
         assert len(store.tasks) == 0

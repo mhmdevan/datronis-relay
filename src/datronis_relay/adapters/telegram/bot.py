@@ -65,9 +65,7 @@ class TelegramAdapter:
         self._max_bytes = max_attachment_bytes
         self._temp_dir.mkdir(parents=True, exist_ok=True)
 
-        self._app: Application = (
-            ApplicationBuilder().token(token).concurrent_updates(True).build()
-        )
+        self._app: Application = ApplicationBuilder().token(token).concurrent_updates(True).build()
         self._register_handlers()
 
     def _register_handlers(self) -> None:
@@ -75,8 +73,7 @@ class TelegramAdapter:
             self._app.add_handler(CommandHandler(name, self._on_update))
         self._app.add_handler(
             MessageHandler(
-                (filters.TEXT | filters.Document.ALL | filters.PHOTO)
-                & ~filters.COMMAND,
+                (filters.TEXT | filters.Document.ALL | filters.PHOTO) & ~filters.COMMAND,
                 self._on_update,
             )
         )
@@ -124,9 +121,7 @@ class TelegramAdapter:
         channel = TelegramReplyChannel(update.effective_chat)
         await self._pipeline.process(message, channel)
 
-    async def _download_attachments(
-        self, update: Update
-    ) -> tuple[FileAttachment, ...]:
+    async def _download_attachments(self, update: Update) -> tuple[FileAttachment, ...]:
         """Download any documents or photos attached to the message.
 
         - Documents: saved with their original filename.
@@ -142,18 +137,14 @@ class TelegramAdapter:
                 downloads.append(att)
 
         if update.message.photo:
-            largest: PhotoSize = max(
-                update.message.photo, key=lambda p: p.file_size or 0
-            )
+            largest: PhotoSize = max(update.message.photo, key=lambda p: p.file_size or 0)
             att = await self._download_photo(largest)
             if att is not None:
                 downloads.append(att)
 
         return tuple(downloads)
 
-    async def _download_document(
-        self, document: Document
-    ) -> FileAttachment | None:
+    async def _download_document(self, document: Document) -> FileAttachment | None:
         if document.file_size and document.file_size > self._max_bytes:
             log.warning(
                 "telegram.attachment.too_large",

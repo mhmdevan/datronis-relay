@@ -32,7 +32,7 @@ All domain types are frozen dataclasses. They are the contracts between layers. 
 | `CostSummary` | `domain.cost` | Fields: `today_*`, `week_cost_usd`, `month_cost_usd`, `total_cost_usd`. |
 | `ModelPricing` | `domain.pricing` | With the `cost(tokens_in, tokens_out)` method. |
 | `ScheduledTask` | `domain.scheduled_task` | Fields: `id`, `user_id`, `platform`, `channel_ref`, `prompt`, `interval_seconds`, `next_run_at`, `created_at`, `is_active`. |
-| `RelayError`, `AuthError`, `RateLimitError`, `ClaudeApiError`, `RelayTimeoutError`, `InternalError`, `NotImplementedCommand`, `ErrorCategory` | `domain.errors` | Exception hierarchy + `user_message()` method. |
+| `RelayError`, `AuthError`, `RateLimitError`, `ClaudeApiError`, `RelayTimeoutError`, `InternalError`, `NotImplementedCommandError`, `ErrorCategory` | `domain.errors` | Exception hierarchy + `user_message()` method. |
 
 ## Core layer — `datronis_relay.core`
 

@@ -4,6 +4,7 @@ These tests verify the SQLiteStorage implementation end-to-end, including
 schema migration on open, concurrent access, cross-connection persistence,
 and the cost ledger rollups.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -72,9 +73,7 @@ class TestSessionPersistence:
         await storage.drop(user_id)
         assert await storage.get(user_id) is None
 
-    async def test_set_closes_prior_active_session(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_set_closes_prior_active_session(self, storage: SQLiteStorage) -> None:
         user_id = UserId("telegram:1")
         first = new_session_id()
         second = new_session_id()
@@ -84,7 +83,8 @@ class TestSessionPersistence:
         assert await storage.get(user_id) == second
 
     async def test_session_survives_reconnect(
-        self, tmp_path  # type: ignore[no-untyped-def]
+        self,
+        tmp_path,  # type: ignore[no-untyped-def]
     ) -> None:
         db_path = tmp_path / "persist.db"
         user_id = UserId("telegram:1")
@@ -116,18 +116,14 @@ class TestCostLedger:
         assert summary.today_cost_usd == pytest.approx(0.015)
         assert summary.total_cost_usd == pytest.approx(0.015)
 
-    async def test_unknown_user_returns_zero_summary(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_unknown_user_returns_zero_summary(self, storage: SQLiteStorage) -> None:
         summary = await storage.summary(UserId("telegram:ghost"))
         assert summary.today_tokens_in == 0
         assert summary.today_tokens_out == 0
         assert summary.today_cost_usd == 0.0
         assert summary.total_cost_usd == 0.0
 
-    async def test_multiple_users_are_isolated(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_multiple_users_are_isolated(self, storage: SQLiteStorage) -> None:
         await storage.record_usage(UserId("telegram:1"), 100, 200, 0.01)
         await storage.record_usage(UserId("telegram:2"), 500, 500, 0.05)
 
@@ -151,9 +147,7 @@ class TestAuditLog:
         )
         await storage.record(entry)
 
-    async def test_record_captures_all_event_types(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_record_captures_all_event_types(self, storage: SQLiteStorage) -> None:
         for event_type in AuditEventType:
             entry = AuditEntry(
                 ts=datetime.now(UTC),
@@ -182,9 +176,7 @@ class TestScheduledTaskStorage:
         assert len(tasks) == 1
         assert tasks[0].prompt == "check disk"
 
-    async def test_delete_makes_task_inactive(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_delete_makes_task_inactive(self, storage: SQLiteStorage) -> None:
         uid = UserId("telegram:1")
         task = await storage.create_scheduled_task(
             user_id=uid,
@@ -198,9 +190,7 @@ class TestScheduledTaskStorage:
         # Second delete is a no-op, not an error.
         assert await storage.delete_scheduled_task(uid, task.id) is False
 
-    async def test_other_user_cannot_delete(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_other_user_cannot_delete(self, storage: SQLiteStorage) -> None:
         alice = UserId("telegram:1")
         bob = UserId("telegram:2")
         task = await storage.create_scheduled_task(
@@ -249,9 +239,7 @@ class TestScheduledTaskStorage:
         empty = await storage.claim_due_tasks(soon, limit=10)
         assert empty == []
 
-    async def test_claim_ignores_inactive_tasks(
-        self, storage: SQLiteStorage
-    ) -> None:
+    async def test_claim_ignores_inactive_tasks(self, storage: SQLiteStorage) -> None:
         uid = UserId("telegram:1")
         task = await storage.create_scheduled_task(
             user_id=uid,

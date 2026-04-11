@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import AbstractAsyncContextManager
+from datetime import UTC, datetime
 from types import TracebackType
-
-import pytest
 
 from datronis_relay.core.auth import AuthGuard
 from datronis_relay.core.command_router import CommandRouter
@@ -14,6 +13,7 @@ from datronis_relay.core.rate_limiter import RateLimiter
 from datronis_relay.core.reply_channel import ReplyChannel
 from datronis_relay.core.scheduler import AdapterRegistry, Scheduler
 from datronis_relay.core.session_manager import SessionManager
+from datronis_relay.domain.ids import UserId
 from datronis_relay.domain.messages import Platform
 from datronis_relay.domain.pricing import ModelPricing
 from datronis_relay.infrastructure.session_store import InMemorySessionStore
@@ -75,9 +75,7 @@ def _build_pipeline_and_scheduler() -> tuple[
     tracker = CostTracker(
         store=FakeCostStore(),
         pricing={
-            "claude-sonnet-4-6": ModelPricing(
-                input_usd_per_mtok=3.0, output_usd_per_mtok=15.0
-            )
+            "claude-sonnet-4-6": ModelPricing(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0)
         },
         default_model="claude-sonnet-4-6",
     )
@@ -111,8 +109,6 @@ class TestSchedulerTick:
     async def test_due_task_is_dispatched_through_pipeline(self) -> None:
         scheduler, store, claude, adapter = _build_pipeline_and_scheduler()
 
-        from datronis_relay.domain.ids import UserId
-
         await store.create_scheduled_task(
             user_id=UserId(OWNER_ID),
             platform=Platform.TELEGRAM,
@@ -122,8 +118,6 @@ class TestSchedulerTick:
         )
         # Manually mark the task as due right now.
         task = next(iter(store.tasks.values()))
-        from datetime import UTC, datetime
-
         store.tasks[task.id] = task.__class__(
             id=task.id,
             user_id=task.user_id,
@@ -152,8 +146,6 @@ class TestSchedulerTick:
     async def test_scheduler_skips_unknown_platform(self) -> None:
         scheduler, store, claude, adapter = _build_pipeline_and_scheduler()
 
-        from datronis_relay.domain.ids import UserId
-
         await store.create_scheduled_task(
             user_id=UserId(OWNER_ID),
             platform=Platform.SLACK,  # no adapter registered for SLACK
@@ -161,8 +153,6 @@ class TestSchedulerTick:
             prompt="test",
             interval_seconds=30,
         )
-        from datetime import UTC, datetime
-
         task = next(iter(store.tasks.values()))
         store.tasks[task.id] = task.__class__(
             id=task.id,
@@ -185,8 +175,6 @@ class TestSchedulerTick:
 
     async def test_tick_ignores_future_tasks(self) -> None:
         scheduler, store, claude, _ = _build_pipeline_and_scheduler()
-
-        from datronis_relay.domain.ids import UserId
 
         # Default FakeScheduledStore.create schedules next_run_at in the future.
         await store.create_scheduled_task(

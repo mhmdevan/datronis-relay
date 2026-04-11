@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 from datronis_relay.domain.attachments import FileAttachment
 from datronis_relay.domain.ids import CorrelationId, SessionId, UserId
 
 
-class Platform(str, Enum):
+class Platform(StrEnum):
     TELEGRAM = "telegram"
     SLACK = "slack"
     DISCORD = "discord"
 
 
-class MessageKind(str, Enum):
+class MessageKind(StrEnum):
     TEXT = "text"
     VOICE = "voice"  # reserved for Phase 2.5
 

@@ -21,15 +21,11 @@ def tracker() -> tuple[CostTracker, FakeCostStore]:
             output_usd_per_mtok=75.0,
         ),
     }
-    return CostTracker(
-        store=store, pricing=pricing, default_model="claude-sonnet-4-6"
-    ), store
+    return CostTracker(store=store, pricing=pricing, default_model="claude-sonnet-4-6"), store
 
 
 class TestCostTracker:
-    async def test_input_only_cost(
-        self, tracker: tuple[CostTracker, FakeCostStore]
-    ) -> None:
+    async def test_input_only_cost(self, tracker: tuple[CostTracker, FakeCostStore]) -> None:
         t, store = tracker
         usage = await t.record(UserId("u1"), tokens_in=1_000_000, tokens_out=0)
         assert usage.tokens_in == 1_000_000
@@ -44,9 +40,7 @@ class TestCostTracker:
     ) -> None:
         t, _ = tracker
         # 500k * 3/M + 200k * 15/M = 1.5 + 3.0 = 4.5
-        usage = await t.record(
-            UserId("u1"), tokens_in=500_000, tokens_out=200_000
-        )
+        usage = await t.record(UserId("u1"), tokens_in=500_000, tokens_out=200_000)
         assert usage.cost_usd == pytest.approx(4.5)
 
     async def test_explicit_model_override(
@@ -66,9 +60,7 @@ class TestCostTracker:
         self, tracker: tuple[CostTracker, FakeCostStore]
     ) -> None:
         t, store = tracker
-        usage = await t.record(
-            UserId("u1"), tokens_in=1000, tokens_out=1000, model="unknown"
-        )
+        usage = await t.record(UserId("u1"), tokens_in=1000, tokens_out=1000, model="unknown")
         assert usage.cost_usd == 0.0
         assert store.records[-1][3] == 0.0
 

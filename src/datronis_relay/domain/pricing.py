@@ -16,7 +16,6 @@ class ModelPricing:
     output_usd_per_mtok: float
 
     def cost(self, tokens_in: int, tokens_out: int) -> float:
-        return (
-            (tokens_in / 1_000_000.0) * self.input_usd_per_mtok
-            + (tokens_out / 1_000_000.0) * self.output_usd_per_mtok
-        )
+        return (tokens_in / 1_000_000.0) * self.input_usd_per_mtok + (
+            tokens_out / 1_000_000.0
+        ) * self.output_usd_per_mtok

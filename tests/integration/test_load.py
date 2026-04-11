@@ -10,6 +10,7 @@ and verifies:
 This isn't a real production load test — it proves the core path doesn't
 serialize badly and that the per-user locks/fakes behave under concurrency.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -37,9 +38,7 @@ class TestLoad:
         tracker = CostTracker(
             store=store,
             pricing={
-                "claude-sonnet-4-6": ModelPricing(
-                    input_usd_per_mtok=3.0, output_usd_per_mtok=15.0
-                )
+                "claude-sonnet-4-6": ModelPricing(input_usd_per_mtok=3.0, output_usd_per_mtok=15.0)
             },
             default_model="claude-sonnet-4-6",
         )
@@ -54,9 +53,7 @@ class TestLoad:
         user = make_user(per_minute=10_000, per_day=10_000_000)
 
         async def dispatch_one(idx: int) -> None:
-            reply = await router.dispatch(
-                make_message(f"question {idx}", user_id=user.id), user
-            )
+            reply = await router.dispatch(make_message(f"question {idx}", user_id=user.id), user)
             assert isinstance(reply, StreamReply)
             collected = "".join([c async for c in reply.chunks])
             assert collected == "ok"
@@ -67,9 +64,9 @@ class TestLoad:
 
         assert claude.call_count == CONCURRENCY
         assert len(store.records) == CONCURRENCY
-        assert (
-            elapsed < WALL_TIME_BUDGET_SECONDS
-        ), f"100 dispatches took {elapsed:.2f}s, expected <{WALL_TIME_BUDGET_SECONDS}s"
+        assert elapsed < WALL_TIME_BUDGET_SECONDS, (
+            f"100 dispatches took {elapsed:.2f}s, expected <{WALL_TIME_BUDGET_SECONDS}s"
+        )
 
     async def test_rate_limit_is_enforced_under_concurrency(self) -> None:
         claude = FakeClaude(script=["ok"])
@@ -89,9 +86,7 @@ class TestLoad:
 
         async def dispatch_one(idx: int) -> bool:
             try:
-                reply = await router.dispatch(
-                    make_message(f"q{idx}", user_id=user.id), user
-                )
+                reply = await router.dispatch(make_message(f"q{idx}", user_id=user.id), user)
                 assert isinstance(reply, StreamReply)
                 _ = [c async for c in reply.chunks]
                 return True

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import structlog
-
-from datetime import UTC, datetime, timedelta
 
 from datronis_relay.core.ports import (
     ClaudeClientProtocol,
@@ -139,18 +138,10 @@ class FakeScheduledStore(ScheduledTaskStoreProtocol):
         self._next_id += 1
         return task
 
-    async def list_scheduled_tasks(
-        self, user_id: UserId
-    ) -> list[ScheduledTask]:
-        return [
-            t
-            for t in self.tasks.values()
-            if t.user_id == user_id and t.is_active
-        ]
+    async def list_scheduled_tasks(self, user_id: UserId) -> list[ScheduledTask]:
+        return [t for t in self.tasks.values() if t.user_id == user_id and t.is_active]
 
-    async def delete_scheduled_task(
-        self, user_id: UserId, task_id: int
-    ) -> bool:
+    async def delete_scheduled_task(self, user_id: UserId, task_id: int) -> bool:
         task = self.tasks.get(task_id)
         if task is None or task.user_id != user_id or not task.is_active:
             return False
@@ -168,18 +159,10 @@ class FakeScheduledStore(ScheduledTaskStoreProtocol):
         return True
 
     async def count_scheduled_tasks(self, user_id: UserId) -> int:
-        return sum(
-            1 for t in self.tasks.values() if t.user_id == user_id and t.is_active
-        )
+        return sum(1 for t in self.tasks.values() if t.user_id == user_id and t.is_active)
 
-    async def claim_due_tasks(
-        self, now: datetime, limit: int = 10
-    ) -> list[ScheduledTask]:
-        due = [
-            t
-            for t in self.tasks.values()
-            if t.is_active and t.next_run_at <= now
-        ][:limit]
+    async def claim_due_tasks(self, now: datetime, limit: int = 10) -> list[ScheduledTask]:
+        due = [t for t in self.tasks.values() if t.is_active and t.next_run_at <= now][:limit]
         for task in due:
             self.tasks[task.id] = ScheduledTask(
                 id=task.id,
