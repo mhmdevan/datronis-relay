@@ -5,6 +5,8 @@ from contextlib import AbstractAsyncContextManager
 from datetime import UTC, datetime
 from types import TracebackType
 
+import pytest
+
 from datronis_relay.core.auth import AuthGuard
 from datronis_relay.core.command_router import CommandRouter
 from datronis_relay.core.cost_tracker import CostTracker
@@ -186,4 +188,73 @@ class TestSchedulerTick:
         )
         fired = await scheduler.tick()
         assert fired == 0
+        assert claude.call_count == 0
+
+    async def test_run_forever_can_be_cancelled(self) -> None:
+        """Covers the outer while loop and graceful CancelledError."""
+        scheduler, _, _, _ = _build_pipeline_and_scheduler()
+        task = asyncio.create_task(scheduler.run_forever())
+        # let the loop tick at least once (poll_interval_seconds=0.01)
+        await asyncio.sleep(0.03)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    async def test_channel_build_failure_is_swallowed(self) -> None:
+        """Covers `scheduler.channel_build_failed` error path."""
+
+        class BrokenAdapter:
+            def build_reply_channel(self, channel_ref: str) -> ReplyChannel:
+                raise RuntimeError("cannot rebuild channel for " + channel_ref)
+
+            async def run_forever(self) -> None:  # pragma: no cover
+                pass
+
+        claude = FakeClaude(script=["ok"])
+        store = FakeScheduledStore()
+        tracker = CostTracker(
+            store=FakeCostStore(),
+            pricing={},
+            default_model="claude-sonnet-4-6",
+        )
+        router = CommandRouter(
+            claude=claude,
+            sessions=SessionManager(InMemorySessionStore()),
+            rate_limiter=RateLimiter(),
+            cost_tracker=tracker,
+        )
+        auth = AuthGuard(users=[make_user(user_id=OWNER_ID)])
+        pipeline = MessagePipeline(auth=auth, router=router)
+        registry = AdapterRegistry(adapters={Platform.TELEGRAM: BrokenAdapter()})
+        scheduler = Scheduler(
+            store=store, pipeline=pipeline, registry=registry, poll_interval_seconds=0.01
+        )
+
+        await store.create_scheduled_task(
+            user_id=UserId(OWNER_ID),
+            platform=Platform.TELEGRAM,
+            channel_ref="X",
+            prompt="p",
+            interval_seconds=30,
+        )
+        # Force due-now
+        task = next(iter(store.tasks.values()))
+        store.tasks[task.id] = task.__class__(
+            id=task.id,
+            user_id=task.user_id,
+            platform=task.platform,
+            channel_ref=task.channel_ref,
+            prompt=task.prompt,
+            interval_seconds=task.interval_seconds,
+            next_run_at=datetime.now(UTC),
+            created_at=task.created_at,
+            is_active=True,
+        )
+
+        # tick() must not propagate the exception from build_reply_channel
+        fired = await scheduler.tick()
+        assert fired == 1
+        for _ in range(5):
+            await asyncio.sleep(0)
+        # Claude was never called because the channel build failed first
         assert claude.call_count == 0
