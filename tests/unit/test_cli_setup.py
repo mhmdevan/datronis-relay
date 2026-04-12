@@ -24,11 +24,12 @@ from datronis_relay.cli.setup import (
     _build_users,
     _ensure_claude_cli_available,
     _find_datronis_binary,
-    _install_claude_cli_via_npm,
+    _install_claude_cli_native,
     _is_claude_already_logged_in,
     _maybe_install_systemd_service,
     _maybe_run_claude_login,
     _show_login_url,
+    _test_claude_cli_works,
     _write_config,
     _write_env,
     run_setup,
@@ -317,86 +318,133 @@ class TestRunSetup:
 
 
 class TestEnsureClaudeCliAvailable:
-    def test_claude_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_claude_works(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
-            shutil, "which", lambda cmd: "/usr/bin/claude" if cmd == "claude" else None
+            cli_setup_mod, "_test_claude_cli_works", lambda: (True, "2.1.104 (Claude Code)")
         )
         prompter = ScriptedPrompter([])
         _ensure_claude_cli_available(prompter)
-        assert any("found" in line.lower() for line in prompter.output)
+        assert any("2.1.104" in line for line in prompter.output)
 
-    def test_claude_missing_npm_found_user_declines(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        def _which(cmd: str) -> str | None:
-            if cmd == "npm":
-                return "/usr/bin/npm"
-            return None
-
-        monkeypatch.setattr(shutil, "which", _which)
+    def test_claude_missing_user_declines_install(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(cli_setup_mod, "_test_claude_cli_works", lambda: (False, "not found"))
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/curl" if cmd == "curl" else None)
         prompter = ScriptedPrompter([False])  # decline install
         _ensure_claude_cli_available(prompter)
-        assert any("not installed" in line for line in prompter.output)
+        assert any(
+            "not installed" in line.lower() or "not working" in line.lower()
+            for line in prompter.output
+        )
 
-    def test_claude_missing_npm_found_user_accepts_success(
+    def test_claude_deprecated_npm_version_triggers_install(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        monkeypatch.setattr(
+            cli_setup_mod, "_test_claude_cli_works", lambda: (False, "npm version is deprecated")
+        )
+
         def _which(cmd: str) -> str | None:
-            if cmd == "npm":
-                return "/usr/bin/npm"
+            if cmd in ("curl", "claude"):
+                return f"/usr/bin/{cmd}"
             return None
 
         monkeypatch.setattr(shutil, "which", _which)
-        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        monkeypatch.setattr(cli_setup_mod, "_install_claude_cli_native", lambda p: True)
         prompter = ScriptedPrompter([True])  # accept install
         _ensure_claude_cli_available(prompter)
-        assert any("installed successfully" in line for line in prompter.output)
 
-    def test_claude_missing_npm_found_user_accepts_failure(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        def _which(cmd: str) -> str | None:
-            if cmd == "npm":
-                return "/usr/bin/npm"
-            return None
-
-        monkeypatch.setattr(shutil, "which", _which)
-        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
-        prompter = ScriptedPrompter([True])  # accept install
-        _ensure_claude_cli_available(prompter)
-        assert any("failed" in line.lower() for line in prompter.output)
-
-    def test_nothing_installed_shows_instructions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_curl_shows_manual_instruction(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(cli_setup_mod, "_test_claude_cli_works", lambda: (False, "not found"))
         monkeypatch.setattr(shutil, "which", lambda _: None)
         prompter = ScriptedPrompter([])
         _ensure_claude_cli_available(prompter)
-        assert any("npm install" in line for line in prompter.output)
+        assert any("curl" in line.lower() for line in prompter.output)
 
 
-class TestInstallClaudeCliViaNpm:
+class TestClaudeCliWorksCheck:
+    def test_not_on_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        works, info = _test_claude_cli_works()
+        assert works is False
+        assert "not found" in info
+
+    def test_returns_version(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *_a, **_k: SimpleNamespace(
+                returncode=0, stdout="2.1.104 (Claude Code)\n", stderr=""
+            ),
+        )
+        works, info = _test_claude_cli_works()
+        assert works is True
+        assert "2.1.104" in info
+
+    def test_deprecated_npm_version(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *_a, **_k: SimpleNamespace(
+                returncode=0,
+                stdout="Claude Code has switched from npm to native installer\n",
+                stderr="",
+            ),
+        )
+        works, info = _test_claude_cli_works()
+        assert works is False
+        assert "native install" in info.lower()
+
+    def test_nonzero_exit(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *_a, **_k: SimpleNamespace(returncode=1, stdout="", stderr="error"),
+        )
+        works, _ = _test_claude_cli_works()
+        assert works is False
+
+    def test_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+
+        def _timeout(*_a: object, **_k: object) -> object:
+            raise subprocess.TimeoutExpired("claude", 10)
+
+        monkeypatch.setattr(subprocess, "run", _timeout)
+        works, info = _test_claude_cli_works()
+        assert works is False
+        assert "timed out" in info
+
+
+class TestInstallClaudeCliNative:
     def test_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        monkeypatch.setattr(cli_setup_mod, "_test_claude_cli_works", lambda: (True, "2.1.104"))
         prompter = ScriptedPrompter([])
-        assert _install_claude_cli_via_npm(prompter) is True
+        assert _install_claude_cli_native(prompter) is True
 
-    def test_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_installer_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
         prompter = ScriptedPrompter([])
-        assert _install_claude_cli_via_npm(prompter) is False
+        assert _install_claude_cli_native(prompter) is False
 
-    def test_npm_not_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_curl_not_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
         def _boom(*_a: object, **_k: object) -> object:
-            raise FileNotFoundError("npm")
+            raise FileNotFoundError("sh")
 
         monkeypatch.setattr(subprocess, "run", _boom)
         prompter = ScriptedPrompter([])
-        assert _install_claude_cli_via_npm(prompter) is False
+        assert _install_claude_cli_native(prompter) is False
 
-    def test_os_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        def _boom(*_a: object, **_k: object) -> object:
-            raise OSError("permission denied")
+    def test_timeout(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _timeout(*_a: object, **_k: object) -> object:
+            raise subprocess.TimeoutExpired("cmd", 120)
 
-        monkeypatch.setattr(subprocess, "run", _boom)
+        monkeypatch.setattr(subprocess, "run", _timeout)
         prompter = ScriptedPrompter([])
-        assert _install_claude_cli_via_npm(prompter) is False
+        assert _install_claude_cli_native(prompter) is False
 
 
 class TestIsClaudeAlreadyLoggedIn:

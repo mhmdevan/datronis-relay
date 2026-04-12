@@ -406,13 +406,24 @@ def _build_service_path(exec_start: str) -> str:
     # 1. The directory containing datronis-relay itself
     dirs.append(str(Path(exec_start).parent))
 
-    # 2. The directory containing `node` — the bundled claude CLI needs it.
-    #    We check the running user's PATH at setup time; systemd won't have it.
+    # 2. The directory containing the `claude` CLI (native installer puts
+    #    it in ~/.claude/bin/ by default; could also be /usr/local/bin/).
+    claude_path = shutil.which("claude")
+    if claude_path:
+        dirs.append(str(Path(claude_path).resolve().parent))
+
+    # 3. Common native-installer locations that might not be on PATH yet
+    home = Path.home()
+    for candidate_dir in [home / ".claude" / "bin", Path("/usr/local/bin")]:
+        if (candidate_dir / "claude").is_file():
+            dirs.append(str(candidate_dir))
+
+    # 4. The directory containing `node` — some claude versions still need it.
     node_path = shutil.which("node")
     if node_path:
         dirs.append(str(Path(node_path).resolve().parent))
 
-    # 3. Standard system directories
+    # 5. Standard system directories
     dirs.extend(
         [
             "/usr/local/sbin",
@@ -514,55 +525,119 @@ def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) ->
 # ----------------------------------------------------------- dependency checks
 
 
+def _test_claude_cli_works() -> tuple[bool, str]:
+    """Check if `claude` is on PATH AND actually works.
+
+    Returns (works: bool, version_or_error: str). A CLI that exists but
+    prints "switched from npm to native installer" is considered broken.
+    """
+    claude_path = shutil.which("claude")
+    if not claude_path:
+        return False, "not found on PATH"
+    try:
+        result = subprocess.run(
+            ["claude", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        output = (result.stdout + result.stderr).strip()
+        if result.returncode != 0:
+            return False, output or f"exit code {result.returncode}"
+        if "native installer" in output.lower() or "switched" in output.lower():
+            return False, "npm version is deprecated — needs native install"
+        return True, output
+    except subprocess.TimeoutExpired:
+        return False, "timed out"
+    except FileNotFoundError:
+        return False, "binary not found"
+    except OSError as exc:
+        return False, str(exc)
+
+
 def _ensure_claude_cli_available(prompter: Prompter) -> None:
-    """Check if `claude` is on PATH. If not, try to install via npm."""
-    if shutil.which("claude"):
-        prompter.say("  Claude Code CLI found.")
+    """Check if the Claude Code CLI works. If not, install via the native
+    installer (curl). The old npm-based install is deprecated by Anthropic.
+    """
+    works, info = _test_claude_cli_works()
+    if works:
+        prompter.say(f"  Claude Code CLI: {info}")
         return
 
-    prompter.say("  `claude` is not installed.")
-    prompter.say("")
-
-    if shutil.which("npm"):
-        prompter.say("  npm found. The Claude Code CLI can be installed now.")
-        if prompter.confirm("  Install @anthropic-ai/claude-code via npm?", default=True):
-            _install_claude_cli_via_npm(prompter)
-            return
-    elif shutil.which("node"):
-        prompter.say("  Node.js found but npm is missing.")
-        prompter.say("  Install npm, then: npm install -g @anthropic-ai/claude-code")
+    if shutil.which("claude"):
+        prompter.say(f"  Claude Code CLI found but not working: {info}")
     else:
-        prompter.say("  Neither Node.js nor npm is installed.")
-        prompter.say("")
-        prompter.say("  Install Node.js + the Claude Code CLI:")
-        if sys.platform == "darwin":
-            prompter.say("    brew install node")
-        else:
-            prompter.say("    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -")
-            prompter.say("    sudo apt-get install -y nodejs")
-        prompter.say("    npm install -g @anthropic-ai/claude-code")
+        prompter.say("  Claude Code CLI is not installed.")
+    prompter.say("")
+
+    if not shutil.which("curl"):
+        prompter.say("  `curl` is required to install the Claude Code CLI.")
+        prompter.say("  Install curl, then run setup again.")
+        return
+
+    if prompter.confirm(
+        "  Install Claude Code CLI now?", default=True
+    ) and _install_claude_cli_native(prompter):
+        return
 
     prompter.say("")
-    prompter.say("  You can continue setup now and install later.")
+    prompter.say("  You can install it manually later:")
+    prompter.say("    curl -fsSL https://claude.ai/install.sh | sh")
+    prompter.say("")
+    prompter.say("  Setup will continue without it.")
 
 
-def _install_claude_cli_via_npm(prompter: Prompter) -> bool:
-    """Run `npm install -g @anthropic-ai/claude-code`. Returns True on success."""
-    cmd = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
-    prompter.say(f"  Running: {' '.join(cmd)}")
+def _install_claude_cli_native(prompter: Prompter) -> bool:
+    """Install Claude Code CLI via Anthropic's native installer.
+
+    Uses `curl -fsSL https://claude.ai/install.sh | sh` — the canonical
+    install method since Anthropic deprecated the npm package.
+    """
+    prompter.say("  Installing Claude Code CLI (native installer)...")
+    prompter.say("  Running: curl -fsSL https://claude.ai/install.sh | sh")
+    prompter.say("")
     try:
-        result = subprocess.run(cmd, check=False)
-        if result.returncode == 0:
-            prompter.say("  Claude Code CLI installed successfully.")
+        result = subprocess.run(
+            ["sh", "-c", "curl -fsSL https://claude.ai/install.sh | sh"],
+            check=False,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            prompter.say(f"  Installation failed (exit code {result.returncode}).")
+            return False
+
+        # The native installer may put the binary in ~/.claude/bin or
+        # /usr/local/bin. Rehash PATH to find it.
+        works, info = _test_claude_cli_works()
+        if works:
+            prompter.say(f"  Claude Code CLI installed: {info}")
             return True
-        prompter.say(f"  Installation failed (exit code {result.returncode}).")
-        if sys.platform != "darwin":
-            prompter.say("  Try: sudo npm install -g @anthropic-ai/claude-code")
+
+        # The installer might have added it to a dir not yet on PATH.
+        # Check common locations.
+        for candidate in [
+            Path.home() / ".claude" / "bin" / "claude",
+            Path("/usr/local/bin/claude"),
+        ]:
+            if candidate.is_file():
+                # Add to PATH for this process so later steps find it
+                os.environ["PATH"] = str(candidate.parent) + ":" + os.environ.get("PATH", "")
+                prompter.say(f"  Installed at {candidate}")
+                return True
+
+        prompter.say("  Installer ran but `claude` is still not on PATH.")
+        prompter.say("  You may need to restart your shell or add it to PATH.")
+        return False
+    except subprocess.TimeoutExpired:
+        prompter.say("  Installation timed out after 120 seconds.")
+        return False
     except FileNotFoundError:
-        prompter.say("  npm not found on PATH.")
+        prompter.say("  `curl` or `sh` not found on PATH.")
+        return False
     except OSError as exc:
         prompter.say(f"  Installation error: {exc}")
-    return False
+        return False
 
 
 def _is_claude_already_logged_in() -> bool:
