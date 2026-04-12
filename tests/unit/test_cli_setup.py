@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
+import shutil
 import stat
+import subprocess
 import urllib.request
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -16,6 +19,9 @@ from datronis_relay.cli.setup import (
     CollectedConfig,
     SetupOptions,
     _build_users,
+    _ensure_claude_cli_available,
+    _install_claude_cli_via_npm,
+    _maybe_run_claude_login,
     _write_config,
     _write_env,
     run_setup,
@@ -208,6 +214,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         result = run_setup(options, prompter=prompter)
         assert result == 0
@@ -221,6 +228,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         run_setup(options, prompter=prompter)
         env_content = (tmp_path / ".env").read_text()
@@ -233,6 +241,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         run_setup(options, prompter=prompter)
         env_content = (tmp_path / ".env").read_text()
@@ -245,6 +254,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         run_setup(options, prompter=prompter)
         env = (tmp_path / ".env").read_text()
@@ -269,6 +279,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         result = run_setup(options, prompter=prompter)
         assert result == 0
@@ -284,6 +295,7 @@ class TestRunSetup:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         run_setup(options, prompter=prompter)
 
@@ -300,6 +312,149 @@ class TestRunSetup:
 # -------------------------------------------------------------------- doctor
 
 
+# ---------------------------------------------------------- dependency checks
+
+
+class TestEnsureClaudeCliAvailable:
+    def test_claude_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            shutil, "which", lambda cmd: "/usr/bin/claude" if cmd == "claude" else None
+        )
+        prompter = ScriptedPrompter([])
+        _ensure_claude_cli_available(prompter)
+        assert any("found" in line.lower() for line in prompter.output)
+
+    def test_claude_missing_npm_found_user_declines(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _which(cmd: str) -> str | None:
+            if cmd == "npm":
+                return "/usr/bin/npm"
+            return None
+
+        monkeypatch.setattr(shutil, "which", _which)
+        prompter = ScriptedPrompter([False])  # decline install
+        _ensure_claude_cli_available(prompter)
+        assert any("not installed" in line for line in prompter.output)
+
+    def test_claude_missing_npm_found_user_accepts_success(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def _which(cmd: str) -> str | None:
+            if cmd == "npm":
+                return "/usr/bin/npm"
+            return None
+
+        monkeypatch.setattr(shutil, "which", _which)
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        prompter = ScriptedPrompter([True])  # accept install
+        _ensure_claude_cli_available(prompter)
+        assert any("installed successfully" in line for line in prompter.output)
+
+    def test_claude_missing_npm_found_user_accepts_failure(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def _which(cmd: str) -> str | None:
+            if cmd == "npm":
+                return "/usr/bin/npm"
+            return None
+
+        monkeypatch.setattr(shutil, "which", _which)
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
+        prompter = ScriptedPrompter([True])  # accept install
+        _ensure_claude_cli_available(prompter)
+        assert any("failed" in line.lower() for line in prompter.output)
+
+    def test_nothing_installed_shows_instructions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        prompter = ScriptedPrompter([])
+        _ensure_claude_cli_available(prompter)
+        assert any("npm install" in line for line in prompter.output)
+
+
+class TestInstallClaudeCliViaNpm:
+    def test_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        prompter = ScriptedPrompter([])
+        assert _install_claude_cli_via_npm(prompter) is True
+
+    def test_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
+        prompter = ScriptedPrompter([])
+        assert _install_claude_cli_via_npm(prompter) is False
+
+    def test_npm_not_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _boom(*_a: object, **_k: object) -> object:
+            raise FileNotFoundError("npm")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        prompter = ScriptedPrompter([])
+        assert _install_claude_cli_via_npm(prompter) is False
+
+    def test_os_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _boom(*_a: object, **_k: object) -> object:
+            raise OSError("permission denied")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        prompter = ScriptedPrompter([])
+        assert _install_claude_cli_via_npm(prompter) is False
+
+
+class TestMaybeRunClaudeLogin:
+    def test_claude_not_on_path_skips(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([])
+        _maybe_run_claude_login(prompter, collected)
+        assert not collected.claude_login_done
+
+    def test_user_declines_login(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([False])  # decline
+        _maybe_run_claude_login(prompter, collected)
+        assert not collected.claude_login_done
+        assert any("Skipping" in line for line in prompter.output)
+
+    def test_login_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True])  # accept
+        _maybe_run_claude_login(prompter, collected)
+        assert collected.claude_login_done
+
+    def test_login_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True])  # accept
+        _maybe_run_claude_login(prompter, collected)
+        assert not collected.claude_login_done
+
+    def test_login_command_not_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+
+        def _boom(*_a: object, **_k: object) -> object:
+            raise FileNotFoundError("claude")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True])
+        _maybe_run_claude_login(prompter, collected)
+        assert not collected.claude_login_done
+
+    def test_login_os_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+
+        def _boom(*_a: object, **_k: object) -> object:
+            raise OSError("broken pipe")
+
+        monkeypatch.setattr(subprocess, "run", _boom)
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True])
+        _maybe_run_claude_login(prompter, collected)
+        assert not collected.claude_login_done
+
+
 class TestDoctor:
     def _write_valid_config(self, tmp_path: Path) -> Path:
         """Helper: run the wizard to produce a known-good config."""
@@ -309,6 +464,7 @@ class TestDoctor:
             env_path=tmp_path / ".env",
             force=True,
             skip_validation=True,
+            skip_external_commands=True,
         )
         run_setup(options, prompter=prompter)
         return tmp_path / "config.yaml"

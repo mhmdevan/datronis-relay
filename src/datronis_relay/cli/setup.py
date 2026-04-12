@@ -14,7 +14,10 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+import shutil
 import stat
+import subprocess
+import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -53,6 +56,7 @@ class SetupOptions:
     env_path: Path = DEFAULT_ENV_PATH
     force: bool = False
     skip_validation: bool = False
+    skip_external_commands: bool = False  # set True in tests
 
 
 @dataclass
@@ -74,6 +78,7 @@ class CollectedConfig:
     sqlite_path: str = "./data/relay.db"
     attachments_path: str = "./data/attachments"
     claude_model: str = "claude-sonnet-4-6"
+    claude_login_done: bool = False
 
 
 # --------------------------------------------------------------------- entrypoint
@@ -107,6 +112,10 @@ def run_setup(
     _write_config(options.config_path, collected)
     _write_env(options.env_path, collected)
 
+    # If subscription mode, offer to run `claude login` now.
+    if not collected.use_api_key and not options.skip_external_commands:
+        _maybe_run_claude_login(active_prompter, collected)
+
     _print_footer(active_prompter, collected, options)
     return 0
 
@@ -134,14 +143,18 @@ def _print_footer(prompter: Prompter, collected: CollectedConfig, options: Setup
     prompter.say(f"  Secrets: {options.env_path}")
     prompter.say("")
 
-    if not collected.use_api_key:
-        prompter.say("Next — authenticate with Claude:")
-        prompter.say("  claude login")
-        prompter.say("")
-        prompter.say("  (Follow the device-code URL in the output. Opens in any browser.)")
-        prompter.say("")
+    if not collected.use_api_key and not collected.claude_login_done:
+        if shutil.which("claude"):
+            prompter.say("Next — authenticate with Claude:")
+            prompter.say("  claude login")
+            prompter.say("")
+        else:
+            prompter.say("Next — install the Claude Code CLI and log in:")
+            prompter.say("  npm install -g @anthropic-ai/claude-code")
+            prompter.say("  claude login")
+            prompter.say("")
 
-    prompter.say("Then start the bot:")
+    prompter.say("Start the bot:")
     prompter.say("  datronis-relay")
     prompter.say("")
 
@@ -153,7 +166,7 @@ def _collect_all(prompter: Prompter, options: SetupOptions) -> CollectedConfig:
     collected = CollectedConfig()
     _collect_telegram_token(prompter, collected)
     _collect_user(prompter, collected)
-    _collect_claude_auth(prompter, collected)
+    _collect_claude_auth(prompter, collected, skip_checks=options.skip_external_commands)
     _collect_slack(prompter, collected)
     _collect_permissions(prompter, collected)
     _collect_storage(prompter, collected)
@@ -198,7 +211,12 @@ def _collect_user(prompter: Prompter, collected: CollectedConfig) -> None:
     prompter.say("")
 
 
-def _collect_claude_auth(prompter: Prompter, collected: CollectedConfig) -> None:
+def _collect_claude_auth(
+    prompter: Prompter,
+    collected: CollectedConfig,
+    *,
+    skip_checks: bool = False,
+) -> None:
     prompter.say("Step 3 of 6 — Claude authentication")
     prompter.say("")
     choice = prompter.ask_choice(
@@ -212,9 +230,10 @@ def _collect_claude_auth(prompter: Prompter, collected: CollectedConfig) -> None
 
     if choice == 0:
         collected.use_api_key = False
-        prompter.say("")
-        prompter.say("  You'll run `claude login` after this wizard completes.")
-        prompter.say("  No ANTHROPIC_API_KEY will be stored.")
+        if not skip_checks:
+            prompter.say("")
+            prompter.say("  Checking for the Claude Code CLI...")
+            _ensure_claude_cli_available(prompter)
     else:
         collected.use_api_key = True
         while True:
@@ -284,6 +303,92 @@ def _collect_storage(prompter: Prompter, collected: CollectedConfig) -> None:
     collected.sqlite_path = prompter.ask("SQLite database path", default="./data/relay.db")
     collected.attachments_path = prompter.ask("Attachments temp dir", default="./data/attachments")
     prompter.say("")
+
+
+# ----------------------------------------------------------- dependency checks
+
+
+def _ensure_claude_cli_available(prompter: Prompter) -> None:
+    """Check if `claude` is on PATH. If not, try to install via npm."""
+    if shutil.which("claude"):
+        prompter.say("  Claude Code CLI found.")
+        return
+
+    prompter.say("  `claude` is not installed.")
+    prompter.say("")
+
+    if shutil.which("npm"):
+        prompter.say("  npm found. The Claude Code CLI can be installed now.")
+        if prompter.confirm("  Install @anthropic-ai/claude-code via npm?", default=True):
+            _install_claude_cli_via_npm(prompter)
+            return
+    elif shutil.which("node"):
+        prompter.say("  Node.js found but npm is missing.")
+        prompter.say("  Install npm, then: npm install -g @anthropic-ai/claude-code")
+    else:
+        prompter.say("  Neither Node.js nor npm is installed.")
+        prompter.say("")
+        prompter.say("  Install Node.js + the Claude Code CLI:")
+        if sys.platform == "darwin":
+            prompter.say("    brew install node")
+        else:
+            prompter.say("    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -")
+            prompter.say("    sudo apt-get install -y nodejs")
+        prompter.say("    npm install -g @anthropic-ai/claude-code")
+
+    prompter.say("")
+    prompter.say("  You can continue setup now and install later.")
+
+
+def _install_claude_cli_via_npm(prompter: Prompter) -> bool:
+    """Run `npm install -g @anthropic-ai/claude-code`. Returns True on success."""
+    cmd = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
+    prompter.say(f"  Running: {' '.join(cmd)}")
+    try:
+        result = subprocess.run(cmd, check=False)
+        if result.returncode == 0:
+            prompter.say("  Claude Code CLI installed successfully.")
+            return True
+        prompter.say(f"  Installation failed (exit code {result.returncode}).")
+        if sys.platform != "darwin":
+            prompter.say("  Try: sudo npm install -g @anthropic-ai/claude-code")
+    except FileNotFoundError:
+        prompter.say("  npm not found on PATH.")
+    except OSError as exc:
+        prompter.say(f"  Installation error: {exc}")
+    return False
+
+
+def _maybe_run_claude_login(prompter: Prompter, collected: CollectedConfig) -> None:
+    """Offer to run `claude login` interactively at the end of setup."""
+    if not shutil.which("claude"):
+        # CLI not available — the footer will show install instructions.
+        return
+
+    prompter.say("")
+    if not prompter.confirm("Run `claude login` now?", default=True):
+        prompter.say("  Skipping. Run `claude login` manually before starting the bot.")
+        return
+
+    prompter.say("")
+    prompter.say("  Opening Claude login flow...")
+    prompter.say("  (Follow the URL or device code in the output below.)")
+    prompter.say("")
+
+    try:
+        result = subprocess.run(["claude", "login"], check=False)
+        if result.returncode == 0:
+            prompter.say("")
+            prompter.say("  Claude login completed successfully.")
+            collected.claude_login_done = True
+        else:
+            prompter.say("")
+            prompter.say(f"  Claude login exited with code {result.returncode}.")
+            prompter.say("  You can retry with: claude login")
+    except FileNotFoundError:
+        prompter.say("  `claude` not found — install it first.")
+    except OSError as exc:
+        prompter.say(f"  Error running claude login: {exc}")
 
 
 def _parse_positive_int(value: str, fallback: int) -> int:
