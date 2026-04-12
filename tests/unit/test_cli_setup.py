@@ -23,6 +23,7 @@ from datronis_relay.cli.setup import (
     SetupOptions,
     _build_users,
     _ensure_claude_cli_available,
+    _find_datronis_binary,
     _install_claude_cli_via_npm,
     _is_claude_already_logged_in,
     _maybe_install_systemd_service,
@@ -572,6 +573,50 @@ class TestShowLoginUrl:
         assert any("https://example.com" in line for line in prompter.output)
 
 
+class TestFindDatronsBinary:
+    def test_finds_via_shutil_which(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/opt/app/.venv/bin/datronis-relay")
+        # Make the path "exist" by patching Path.is_file
+        monkeypatch.setattr(Path, "is_file", lambda self: "datronis-relay" in str(self))
+        result = _find_datronis_binary()
+        assert result is not None
+        assert "datronis-relay" in result
+
+    def test_finds_sibling_of_sys_executable(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        binary = venv_bin / "datronis-relay"
+        binary.write_text("#!/usr/bin/env python3\n")
+        monkeypatch.setattr(sys, "executable", str(venv_bin / "python3.12"))
+        result = _find_datronis_binary()
+        assert result is not None
+        assert result.endswith("datronis-relay")
+
+    def test_finds_in_cwd_venv(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        monkeypatch.setattr(sys, "executable", "/usr/bin/python3")  # no sibling
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        binary = venv_bin / "datronis-relay"
+        binary.write_text("#!/usr/bin/env python3\n")
+        monkeypatch.chdir(tmp_path)
+        result = _find_datronis_binary()
+        assert result is not None
+        assert result.endswith("datronis-relay")
+
+    def test_returns_none_when_not_found(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        monkeypatch.setattr(sys, "executable", "/usr/bin/python3")
+        monkeypatch.chdir(tmp_path)  # no .venv here
+        result = _find_datronis_binary()
+        assert result is None
+
+
 class TestMaybeInstallSystemdService:
     def test_skips_on_non_linux(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.setattr(sys, "platform", "darwin")
@@ -594,6 +639,15 @@ class TestMaybeInstallSystemdService:
         options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
         prompter = ScriptedPrompter([False])  # decline install
         assert _maybe_install_systemd_service(prompter, options) is False
+
+    @pytest.fixture(autouse=True)
+    def _patch_binary_finder(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """All systemd tests need _find_datronis_binary to return a path."""
+        monkeypatch.setattr(
+            cli_setup_mod,
+            "_find_datronis_binary",
+            lambda: "/opt/app/.venv/bin/datronis-relay",
+        )
 
     def test_user_accepts_and_commands_succeed(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path

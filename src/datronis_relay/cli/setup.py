@@ -355,6 +355,37 @@ WantedBy=multi-user.target
 UNIT_FILE_PATH = Path("/etc/systemd/system/datronis-relay.service")
 
 
+def _find_datronis_binary() -> str | None:
+    """Find the absolute path to the `datronis-relay` console script.
+
+    Tries three strategies in order:
+      1. shutil.which — finds it on the current PATH (works when the venv
+         is activated, which it always is during `datronis-relay setup`).
+      2. Look next to sys.executable (the venv's python) for a sibling
+         `datronis-relay` script — handles the case where PATH is weird
+         but the venv is active.
+      3. Look in the cwd's .venv/bin/ — common convention for local venvs.
+
+    Returns the absolute path string, or None if all strategies fail.
+    """
+    # Strategy 1: PATH lookup
+    found = shutil.which("datronis-relay")
+    if found and Path(found).is_file():
+        return str(Path(found).resolve())
+
+    # Strategy 2: sibling of the running Python interpreter
+    sibling = Path(sys.executable).resolve().parent / "datronis-relay"
+    if sibling.is_file():
+        return str(sibling)
+
+    # Strategy 3: cwd/.venv/bin/
+    local_venv = Path.cwd() / ".venv" / "bin" / "datronis-relay"
+    if local_venv.is_file():
+        return str(local_venv.resolve())
+
+    return None
+
+
 def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) -> bool:
     """On Linux with systemctl, offer to install a background service."""
     if sys.platform != "linux":
@@ -372,8 +403,11 @@ def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) ->
     # Resolve paths for the unit file.
     workdir = Path.cwd().resolve()
     config_path = options.config_path.resolve()
-    venv_bin = Path(sys.executable).resolve().parent
-    exec_start = str(venv_bin / "datronis-relay")
+    exec_start = _find_datronis_binary()
+    if not exec_start:
+        prompter.say("  Could not find the datronis-relay binary on PATH.")
+        prompter.say("  Make sure the virtualenv is activated and try again.")
+        return False
     user = os.getenv("USER") or os.getenv("LOGNAME") or "root"
     home = str(Path.home().resolve())
 
