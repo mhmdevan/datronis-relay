@@ -48,8 +48,13 @@ COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
 
 # Install Claude Code CLI via Anthropic's native installer.
-# Run as root so it installs to a system-wide location, then switch to relay.
-RUN curl -fsSL https://claude.ai/install.sh | sh \
+# The installer may put it in ~/.local/bin — we add that to PATH above.
+# Install bash if not present (slim images may only have dash as /bin/sh).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends bash \
+ && apt-get clean && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL https://claude.ai/install.sh | bash \
+ && export PATH="/root/.local/bin:$PATH" \
  && claude --version
 
 USER relay
@@ -57,7 +62,7 @@ USER relay
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HOME=/home/relay \
-    PATH=/home/relay/.claude/bin:/usr/local/bin:/usr/bin:/bin
+    PATH=/home/relay/.local/bin:/home/relay/.claude/bin:/usr/local/bin:/usr/bin:/bin
 
 # Persist Claude Code OAuth credentials across container rebuilds.
 VOLUME ["/home/relay/.claude"]

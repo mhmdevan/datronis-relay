@@ -414,7 +414,11 @@ def _build_service_path(exec_start: str) -> str:
 
     # 3. Common native-installer locations that might not be on PATH yet
     home = Path.home()
-    for candidate_dir in [home / ".claude" / "bin", Path("/usr/local/bin")]:
+    for candidate_dir in [
+        home / ".local" / "bin",
+        home / ".claude" / "bin",
+        Path("/usr/local/bin"),
+    ]:
         if (candidate_dir / "claude").is_file():
             dirs.append(str(candidate_dir))
 
@@ -599,7 +603,7 @@ def _install_claude_cli_native(prompter: Prompter) -> bool:
     prompter.say("")
     try:
         result = subprocess.run(
-            ["sh", "-c", "curl -fsSL https://claude.ai/install.sh | sh"],
+            ["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"],
             check=False,
             timeout=120,
         )
@@ -607,17 +611,24 @@ def _install_claude_cli_native(prompter: Prompter) -> bool:
             prompter.say(f"  Installation failed (exit code {result.returncode}).")
             return False
 
-        # The native installer may put the binary in ~/.claude/bin or
-        # /usr/local/bin. Rehash PATH to find it.
+        # The native installer may put the binary in ~/.local/bin,
+        # ~/.claude/bin, or /usr/local/bin. Rehash PATH to find it.
+        # First, add common locations to this process's PATH so
+        # _test_claude_cli_works can find the just-installed binary.
+        home = Path.home()
+        for extra_dir in [home / ".local" / "bin", home / ".claude" / "bin"]:
+            if extra_dir.is_dir():
+                os.environ["PATH"] = str(extra_dir) + ":" + os.environ.get("PATH", "")
+
         works, info = _test_claude_cli_works()
         if works:
             prompter.say(f"  Claude Code CLI installed: {info}")
             return True
 
-        # The installer might have added it to a dir not yet on PATH.
-        # Check common locations.
+        # Last resort: check specific candidate paths.
         for candidate in [
-            Path.home() / ".claude" / "bin" / "claude",
+            home / ".local" / "bin" / "claude",
+            home / ".claude" / "bin" / "claude",
             Path("/usr/local/bin/claude"),
         ]:
             if candidate.is_file():
