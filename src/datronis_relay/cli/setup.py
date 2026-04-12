@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import re
 import shutil
 import stat
@@ -116,7 +117,12 @@ def run_setup(
     if not collected.use_api_key and not options.skip_external_commands:
         _maybe_run_claude_login(active_prompter, collected)
 
-    _print_footer(active_prompter, collected, options)
+    # On Linux with systemctl, offer to install as a background service.
+    service_installed = False
+    if not options.skip_external_commands:
+        service_installed = _maybe_install_systemd_service(active_prompter, options)
+
+    _print_footer(active_prompter, collected, options, service_installed)
     return 0
 
 
@@ -134,7 +140,12 @@ def _print_header(prompter: Prompter) -> None:
     prompter.say("")
 
 
-def _print_footer(prompter: Prompter, collected: CollectedConfig, options: SetupOptions) -> None:
+def _print_footer(
+    prompter: Prompter,
+    collected: CollectedConfig,
+    options: SetupOptions,
+    service_installed: bool = False,
+) -> None:
     prompter.say("")
     prompter.say("=" * 60)
     prompter.say("  Setup complete")
@@ -154,8 +165,14 @@ def _print_footer(prompter: Prompter, collected: CollectedConfig, options: Setup
             prompter.say("  claude login")
             prompter.say("")
 
-    prompter.say("Start the bot:")
-    prompter.say("  datronis-relay")
+    if service_installed:
+        prompter.say("The bot is running as a background service.")
+        prompter.say("  View logs:       sudo journalctl -u datronis-relay -f")
+        prompter.say("  Restart:         sudo systemctl restart datronis-relay")
+        prompter.say("  Stop:            sudo systemctl stop datronis-relay")
+    else:
+        prompter.say("Start the bot:")
+        prompter.say("  datronis-relay")
     prompter.say("")
 
 
@@ -302,6 +319,112 @@ def _collect_storage(prompter: Prompter, collected: CollectedConfig) -> None:
     _ = prompter  # unused; kept for consistency with other _collect_* signatures
     collected.sqlite_path = "./data/relay.db"
     collected.attachments_path = "./data/attachments"
+
+
+# ---------------------------------------------------------- systemd service
+
+
+_SYSTEMD_UNIT_TEMPLATE = """\
+[Unit]
+Description=datronis-relay — chat bridge for the Claude Agent SDK
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={user}
+Group={user}
+WorkingDirectory={workdir}
+Environment=HOME={home}
+Environment=DATRONIS_CONFIG_PATH={config_path}
+ExecStart={exec_start}
+Restart=on-failure
+RestartSec=5s
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths={workdir}
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+UNIT_FILE_PATH = Path("/etc/systemd/system/datronis-relay.service")
+
+
+def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) -> bool:
+    """On Linux with systemctl, offer to install a background service."""
+    if sys.platform != "linux":
+        return False
+    if not shutil.which("systemctl"):
+        return False
+
+    prompter.say("")
+    prompter.say("  Linux detected with systemd.")
+    if not prompter.confirm(
+        "  Install as a background service? (auto-starts on boot)", default=True
+    ):
+        return False
+
+    # Resolve paths for the unit file.
+    workdir = Path.cwd().resolve()
+    config_path = options.config_path.resolve()
+    venv_bin = Path(sys.executable).resolve().parent
+    exec_start = str(venv_bin / "datronis-relay")
+    user = os.getenv("USER") or os.getenv("LOGNAME") or "root"
+    home = str(Path.home().resolve())
+
+    unit_content = _SYSTEMD_UNIT_TEMPLATE.format(
+        user=user,
+        workdir=workdir,
+        home=home,
+        config_path=config_path,
+        exec_start=exec_start,
+    )
+
+    # Write unit file + reload + enable + start. Needs root.
+    prompter.say(f"  Writing {UNIT_FILE_PATH}")
+    cmds = [
+        ["tee", str(UNIT_FILE_PATH)],
+        ["systemctl", "daemon-reload"],
+        ["systemctl", "enable", "--now", "datronis-relay"],
+    ]
+
+    use_sudo = os.geteuid() != 0
+
+    try:
+        # Write unit file via tee (handles sudo cleanly)
+        tee_cmd = ["sudo", "tee", str(UNIT_FILE_PATH)] if use_sudo else ["tee", str(UNIT_FILE_PATH)]
+        tee_proc = subprocess.run(
+            tee_cmd,
+            input=unit_content,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if tee_proc.returncode != 0:
+            prompter.say(f"  Failed to write unit file: {tee_proc.stderr.strip()}")
+            return False
+
+        for cmd in cmds[1:]:
+            full_cmd = ["sudo", *cmd] if use_sudo else cmd
+            prompter.say(f"  Running: {' '.join(full_cmd)}")
+            result = subprocess.run(full_cmd, check=False, capture_output=True, text=True)
+            if result.returncode != 0:
+                prompter.say(f"  Failed: {result.stderr.strip()}")
+                return False
+
+        prompter.say("  Service installed and started.")
+        return True
+    except FileNotFoundError:
+        prompter.say("  sudo or systemctl not found on PATH.")
+        return False
+    except OSError as exc:
+        prompter.say(f"  Error installing service: {exc}")
+        return False
 
 
 # ----------------------------------------------------------- dependency checks

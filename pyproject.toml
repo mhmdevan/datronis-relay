@@ -96,7 +96,8 @@ ignore = [
 "src/datronis_relay/infrastructure/claude_client.py" = ["PLC0415"]
 # qrcode is imported lazily inside _show_login_url so the setup wizard
 # works even if the library is missing (URL is still shown as text).
-"src/datronis_relay/cli/setup.py" = ["PLC0415"]
+# PLR0911: _maybe_install_systemd_service has many early returns (guard clauses).
+"src/datronis_relay/cli/setup.py" = ["PLC0415", "PLR0911"]
 # Doctor is a linear sequence of 7 independent config checks — splitting
 # them across helper functions would obscure the structure, not clarify it.
 "src/datronis_relay/cli/doctor.py" = ["PLR0912", "PLR0915"]

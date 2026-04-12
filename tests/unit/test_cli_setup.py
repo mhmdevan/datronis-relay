@@ -7,6 +7,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
@@ -24,6 +25,7 @@ from datronis_relay.cli.setup import (
     _ensure_claude_cli_available,
     _install_claude_cli_via_npm,
     _is_claude_already_logged_in,
+    _maybe_install_systemd_service,
     _maybe_run_claude_login,
     _show_login_url,
     _write_config,
@@ -568,6 +570,87 @@ class TestShowLoginUrl:
         _show_login_url(prompter, "https://example.com")
         # URL is still displayed even without qrcode library
         assert any("https://example.com" in line for line in prompter.output)
+
+
+class TestMaybeInstallSystemdService:
+    def test_skips_on_non_linux(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "darwin")
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([])
+        assert _maybe_install_systemd_service(prompter, options) is False
+
+    def test_skips_without_systemctl(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(
+            shutil, "which", lambda cmd: None if cmd == "systemctl" else "/usr/bin/" + cmd
+        )
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([])
+        assert _maybe_install_systemd_service(prompter, options) is False
+
+    def test_user_declines(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([False])  # decline install
+        assert _maybe_install_systemd_service(prompter, options) is False
+
+    def test_user_accepts_and_commands_succeed(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(os, "geteuid", lambda: 0)  # pretend root
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *_a, **_k: SimpleNamespace(returncode=0, stderr=""),
+        )
+
+        config = tmp_path / "c.yaml"
+        config.write_text("{}")
+        options = SetupOptions(config_path=config, env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([True])  # accept
+        assert _maybe_install_systemd_service(prompter, options) is True
+        assert any("installed and started" in line for line in prompter.output)
+
+    def test_tee_failure_returns_false(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(os, "geteuid", lambda: 0)
+        monkeypatch.setattr(
+            subprocess,
+            "run",
+            lambda *_a, **_k: SimpleNamespace(returncode=1, stderr="permission denied"),
+        )
+        config = tmp_path / "c.yaml"
+        config.write_text("{}")
+        options = SetupOptions(config_path=config, env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([True])
+        assert _maybe_install_systemd_service(prompter, options) is False
+
+    def test_sudo_used_when_not_root(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(os, "geteuid", lambda: 1000)  # not root
+
+        captured_cmds: list[list[str]] = []
+
+        def _capture_run(cmd: list[str], **_kwargs: object) -> SimpleNamespace:
+            captured_cmds.append(cmd)
+            return SimpleNamespace(returncode=0, stderr="")
+
+        monkeypatch.setattr(subprocess, "run", _capture_run)
+        config = tmp_path / "c.yaml"
+        config.write_text("{}")
+        options = SetupOptions(config_path=config, env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([True])
+        _maybe_install_systemd_service(prompter, options)
+        # All commands should have been prefixed with 'sudo'
+        for cmd in captured_cmds:
+            assert cmd[0] == "sudo"
 
 
 class TestDoctor:
