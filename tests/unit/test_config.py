@@ -3,12 +3,13 @@ pydantic validation, and the `json` field alias."""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
-from datronis_relay.infrastructure.config import AppConfig
+from datronis_relay.infrastructure.config import _DOTENV_LOADED, AppConfig, _load_dotenv
 
 
 def _write_yaml(tmp_path: Path, body: str) -> Path:
@@ -150,6 +151,76 @@ class TestUserValidation:
         path.write_text("telegram:\n  bot_token: 't'\nusers: []\n")
         with pytest.raises(ValidationError):
             AppConfig.load(path)
+
+
+class TestLoadDotenv:
+    @pytest.fixture(autouse=True)
+    def _clear_loaded_cache(self) -> None:
+        _DOTENV_LOADED.clear()
+
+    def test_loads_key_value_pairs(self, tmp_path: Path) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("FOO_TEST_KEY=bar123\n")
+        os.environ.pop("FOO_TEST_KEY", None)
+        _load_dotenv(env_file)
+        assert os.environ.get("FOO_TEST_KEY") == "bar123"
+        os.environ.pop("FOO_TEST_KEY", None)
+
+    def test_ignores_comments_and_blank_lines(self, tmp_path: Path) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("# comment\n\nKEY_A=1\n  # indented comment\nKEY_B=2\n")
+        os.environ.pop("KEY_A", None)
+        os.environ.pop("KEY_B", None)
+        _load_dotenv(env_file)
+        assert os.environ.get("KEY_A") == "1"
+        assert os.environ.get("KEY_B") == "2"
+        os.environ.pop("KEY_A", None)
+        os.environ.pop("KEY_B", None)
+
+    def test_strips_quotes(self, tmp_path: Path) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("QUOTED_KEY=\"hello world\"\nSINGLE='value'\n")
+        os.environ.pop("QUOTED_KEY", None)
+        os.environ.pop("SINGLE", None)
+        _load_dotenv(env_file)
+        assert os.environ.get("QUOTED_KEY") == "hello world"
+        assert os.environ.get("SINGLE") == "value"
+        os.environ.pop("QUOTED_KEY", None)
+        os.environ.pop("SINGLE", None)
+
+    def test_real_env_takes_precedence(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("EXISTING_KEY=from_file\n")
+        monkeypatch.setenv("EXISTING_KEY", "from_shell")
+        _load_dotenv(env_file)
+        assert os.environ.get("EXISTING_KEY") == "from_shell"
+
+    def test_skips_missing_file(self, tmp_path: Path) -> None:
+        _load_dotenv(tmp_path / "nonexistent")  # must not raise
+
+    def test_loads_same_file_only_once(self, tmp_path: Path) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("ONCE_KEY=first\n")
+        os.environ.pop("ONCE_KEY", None)
+        _load_dotenv(env_file)
+        assert os.environ.get("ONCE_KEY") == "first"
+        os.environ["ONCE_KEY"] = "overwritten"
+        _load_dotenv(env_file)  # should be a no-op (already loaded)
+        assert os.environ.get("ONCE_KEY") == "overwritten"
+        os.environ.pop("ONCE_KEY", None)
+
+    def test_dotenv_is_loaded_by_appconfig(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End-to-end: AppConfig.load reads .env next to config.yaml."""
+        env_file = tmp_path / ".env"
+        env_file.write_text("DATRONIS_TELEGRAM_BOT_TOKEN=from-dotenv\n")
+        config_path = _write_yaml(tmp_path, MINIMAL_YAML)
+        monkeypatch.delenv("DATRONIS_TELEGRAM_BOT_TOKEN", raising=False)
+        config = AppConfig.load(config_path)
+        assert config.telegram.bot_token.get_secret_value() == "from-dotenv"
 
 
 class TestPricing:

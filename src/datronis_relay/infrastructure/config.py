@@ -110,6 +110,14 @@ class AppConfig(BaseModel):
             path if path is not None else os.getenv("DATRONIS_CONFIG_PATH", "./config.yaml")
         )
         config_path = Path(resolved)
+
+        # Load .env if it exists next to the config file (or in cwd).
+        # This is the only place .env is read — no pydantic-settings, no
+        # third-party dotenv library. We use os.environ.setdefault so
+        # real env vars always take precedence over the file.
+        _load_dotenv(config_path.parent / ".env")
+        _load_dotenv(Path(".env"))
+
         if not config_path.exists():
             raise FileNotFoundError(
                 f"config file not found: {config_path} "
@@ -163,3 +171,33 @@ def _apply_env_overrides(raw: dict[str, Any]) -> dict[str, Any]:
             logging_["json"] = log_json.lower() in ("true", "1", "yes", "on")
 
     return raw
+
+
+_DOTENV_LOADED: set[Path] = set()
+
+
+def _load_dotenv(path: Path) -> None:
+    """Minimal .env loader — no third-party dependency.
+
+    Reads KEY=VALUE lines from `path`, ignoring comments (#) and blank
+    lines. Uses `os.environ.setdefault` so real shell-exported env vars
+    always win over the file. Each path is loaded at most once per process.
+    """
+    resolved = path.resolve()
+    if resolved in _DOTENV_LOADED or not resolved.is_file():
+        return
+    _DOTENV_LOADED.add(resolved)
+    for raw_line in resolved.read_text().splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if "=" not in stripped:
+            continue
+        key, _, value = stripped.partition("=")
+        key = key.strip()
+        value = value.strip()
+        # Strip surrounding quotes if present (KEY="value" or KEY='value')
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):  # noqa: PLR2004
+            value = value[1:-1]
+        if key:
+            os.environ.setdefault(key, value)
