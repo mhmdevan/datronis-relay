@@ -336,6 +336,7 @@ User={user}
 Group={user}
 WorkingDirectory={workdir}
 Environment=HOME={home}
+Environment=PATH={service_path}
 Environment=DATRONIS_CONFIG_PATH={config_path}
 ExecStart={exec_start}
 Restart=on-failure
@@ -346,7 +347,7 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 PrivateDevices=true
-ReadWritePaths={workdir}
+ReadWritePaths={workdir} {home}
 
 [Install]
 WantedBy=multi-user.target
@@ -386,6 +387,53 @@ def _find_datronis_binary() -> str | None:
     return None
 
 
+def _build_service_path(exec_start: str) -> str:
+    """Build a PATH for the systemd unit that includes every directory
+    the service needs at runtime:
+
+    1. The venv bin/ (where `datronis-relay` lives)
+    2. The Node.js bin/ (where `node` lives — needed by the bundled
+       `claude` CLI inside claude-agent-sdk). Covers nvm, nodesource,
+       Homebrew, and system-package installs.
+    3. Standard system directories as a fallback.
+
+    This is the fix for the "claude: command not found" / "node not found"
+    crash that happens when Node.js is installed via nvm (which puts it in
+    ~/.nvm/versions/node/vX/bin/, not on systemd's default PATH).
+    """
+    dirs: list[str] = []
+
+    # 1. The directory containing datronis-relay itself
+    dirs.append(str(Path(exec_start).parent))
+
+    # 2. The directory containing `node` — the bundled claude CLI needs it.
+    #    We check the running user's PATH at setup time; systemd won't have it.
+    node_path = shutil.which("node")
+    if node_path:
+        dirs.append(str(Path(node_path).resolve().parent))
+
+    # 3. Standard system directories
+    dirs.extend(
+        [
+            "/usr/local/sbin",
+            "/usr/local/bin",
+            "/usr/sbin",
+            "/usr/bin",
+            "/sbin",
+            "/bin",
+        ]
+    )
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique: list[str] = []
+    for d in dirs:
+        if d not in seen:
+            seen.add(d)
+            unique.append(d)
+    return ":".join(unique)
+
+
 def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) -> bool:
     """On Linux with systemctl, offer to install a background service."""
     if sys.platform != "linux":
@@ -410,6 +458,7 @@ def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) ->
         return False
     user = os.getenv("USER") or os.getenv("LOGNAME") or "root"
     home = str(Path.home().resolve())
+    service_path = _build_service_path(exec_start)
 
     unit_content = _SYSTEMD_UNIT_TEMPLATE.format(
         user=user,
@@ -417,6 +466,7 @@ def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) ->
         home=home,
         config_path=config_path,
         exec_start=exec_start,
+        service_path=service_path,
     )
 
     # Write unit file + reload + enable + start. Needs root.
