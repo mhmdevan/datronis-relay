@@ -176,7 +176,7 @@ def _collect_all(prompter: Prompter, options: SetupOptions) -> CollectedConfig:
 
 
 def _collect_telegram_token(prompter: Prompter, collected: CollectedConfig) -> None:
-    prompter.say("Step 1 of 6 — Telegram bot token")
+    prompter.say("Step 1 of 5 — Telegram bot token")
     prompter.say("  Create a bot via @BotFather on Telegram.")
     prompter.say("  The token looks like:  123456789:ABC-xyz_...")
     prompter.say("")
@@ -196,7 +196,7 @@ def _collect_telegram_token(prompter: Prompter, collected: CollectedConfig) -> N
 
 
 def _collect_user(prompter: Prompter, collected: CollectedConfig) -> None:
-    prompter.say("Step 2 of 6 — Your Telegram user id")
+    prompter.say("Step 2 of 5 — Your Telegram user id")
     prompter.say("  Send /start to @userinfobot — it replies with your numeric id.")
     prompter.say("")
     while True:
@@ -217,7 +217,7 @@ def _collect_claude_auth(
     *,
     skip_checks: bool = False,
 ) -> None:
-    prompter.say("Step 3 of 6 — Claude authentication")
+    prompter.say("Step 3 of 5 — Claude authentication")
     prompter.say("")
     choice = prompter.ask_choice(
         "How do you want to authenticate with Claude?",
@@ -252,7 +252,7 @@ def _collect_claude_auth(
 
 
 def _collect_slack(prompter: Prompter, collected: CollectedConfig) -> None:
-    prompter.say("Step 4 of 6 — Slack adapter (optional)")
+    prompter.say("Step 4 of 5 — Slack adapter (optional)")
     if not prompter.confirm("  Enable Slack too?", default=False):
         prompter.say("  Skipping.")
         prompter.say("")
@@ -268,7 +268,7 @@ def _collect_slack(prompter: Prompter, collected: CollectedConfig) -> None:
 
 
 def _collect_permissions(prompter: Prompter, collected: CollectedConfig) -> None:
-    prompter.say("Step 5 of 6 — Permissions and rate limits")
+    prompter.say("Step 5 of 5 — Permissions and rate limits")
     prompter.say("")
     choice = prompter.ask_choice(
         "Which tools should Claude be allowed to use?",
@@ -296,13 +296,12 @@ def _collect_permissions(prompter: Prompter, collected: CollectedConfig) -> None
 
 
 def _collect_storage(prompter: Prompter, collected: CollectedConfig) -> None:
-    prompter.say("Step 6 of 6 — Storage paths")
-    prompter.say("  If you run via Docker Compose, use absolute paths under")
-    prompter.say("  /var/lib/datronis-relay/ so the named volume persists them.")
-    prompter.say("")
-    collected.sqlite_path = prompter.ask("SQLite database path", default="./data/relay.db")
-    collected.attachments_path = prompter.ask("Attachments temp dir", default="./data/attachments")
-    prompter.say("")
+    # Storage paths use sensible defaults (./data/relay.db, ./data/attachments).
+    # No prompt — most users don't need to change them. Power users who need
+    # absolute Docker paths can edit config.yaml after setup.
+    _ = prompter  # unused; kept for consistency with other _collect_* signatures
+    collected.sqlite_path = "./data/relay.db"
+    collected.attachments_path = "./data/attachments"
 
 
 # ----------------------------------------------------------- dependency checks
@@ -359,10 +358,24 @@ def _install_claude_cli_via_npm(prompter: Prompter) -> bool:
     return False
 
 
+def _is_claude_already_logged_in() -> bool:
+    """Check if Claude CLI credentials already exist on disk."""
+    home = Path.home()
+    for candidate in [home / ".claude", home / ".config" / "claude"]:
+        if candidate.is_dir() and any(candidate.iterdir()):
+            return True
+    return False
+
+
 def _maybe_run_claude_login(prompter: Prompter, collected: CollectedConfig) -> None:
     """Offer to run `claude login` interactively at the end of setup."""
     if not shutil.which("claude"):
-        # CLI not available — the footer will show install instructions.
+        return
+
+    if _is_claude_already_logged_in():
+        prompter.say("")
+        prompter.say("  Existing Claude credentials found — skipping login.")
+        collected.claude_login_done = True
         return
 
     prompter.say("")
@@ -370,25 +383,106 @@ def _maybe_run_claude_login(prompter: Prompter, collected: CollectedConfig) -> N
         prompter.say("  Skipping. Run `claude login` manually before starting the bot.")
         return
 
+    while True:
+        prompter.say("")
+        prompter.say("  Running Claude login...")
+        prompter.say("")
+
+        try:
+            success, url = _run_claude_login_with_url_capture()
+            if url:
+                _show_login_url(prompter, url)
+            if success:
+                prompter.say("")
+                prompter.say("  Claude login completed successfully.")
+                collected.claude_login_done = True
+                return
+            prompter.say("")
+            prompter.say("  Login did not complete.")
+        except KeyboardInterrupt:
+            prompter.say("")
+            prompter.say("  Login interrupted.")
+        except FileNotFoundError:
+            prompter.say("  `claude` command not found.")
+            return
+        except OSError as exc:
+            prompter.say(f"  Error: {exc}")
+
+        if not prompter.confirm("  Try again?", default=True):
+            prompter.say("  Skipping. Run `claude login` manually before starting the bot.")
+            return
+
+
+_URL_PATTERN = re.compile(r"(https?://\S+)")
+
+
+def _run_claude_login_with_url_capture() -> tuple[bool, str]:
+    """Run `claude login`, stream its output to the terminal, and capture
+    any URL it prints (for QR code display).
+
+    Returns (success: bool, extracted_url: str). The URL may be empty if
+    the CLI didn't print one (e.g. already logged in, or newer CLI version
+    with a different flow).
+    """
+    captured_url = ""
+    process = subprocess.Popen(
+        ["claude", "login"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    assert process.stdout is not None
+    try:
+        for line in process.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            if not captured_url:
+                match = _URL_PATTERN.search(line)
+                if match:
+                    captured_url = match.group(1).rstrip(")")
+    except KeyboardInterrupt:
+        process.terminate()
+        raise
+    finally:
+        process.wait()
+    return process.returncode == 0, captured_url
+
+
+def _show_login_url(prompter: Prompter, url: str) -> None:
+    """Display a login URL in a copy-friendly way + as a terminal QR code.
+
+    The QR code is the killer feature for headless Linux / SSH. The user
+    points their phone camera at the terminal and the browser opens
+    automatically — no copy-paste of wrapped URLs needed.
+    """
     prompter.say("")
-    prompter.say("  Opening Claude login flow...")
-    prompter.say("  (Follow the URL or device code in the output below.)")
+    prompter.say("  ┌─────────────────────────────────────────────┐")
+    prompter.say("  │  Copy this URL if the browser didn't open:  │")
+    prompter.say("  └─────────────────────────────────────────────┘")
+    prompter.say("")
+    prompter.say(f"  {url}")
     prompter.say("")
 
     try:
-        result = subprocess.run(["claude", "login"], check=False)
-        if result.returncode == 0:
-            prompter.say("")
-            prompter.say("  Claude login completed successfully.")
-            collected.claude_login_done = True
-        else:
-            prompter.say("")
-            prompter.say(f"  Claude login exited with code {result.returncode}.")
-            prompter.say("  You can retry with: claude login")
-    except FileNotFoundError:
-        prompter.say("  `claude` not found — install it first.")
-    except OSError as exc:
-        prompter.say(f"  Error running claude login: {exc}")
+        import qrcode
+
+        qr = qrcode.QRCode(border=1)
+        qr.add_data(url)
+        qr.make(fit=True)
+        prompter.say("  Or scan this QR code with your phone:")
+        prompter.say("")
+        # qr.print_ascii() prints to stdout directly — we call it and
+        # let it render. No way to route through prompter without
+        # capturing stdout, which isn't worth the complexity.
+        qr.print_ascii(invert=True)
+        prompter.say("")
+    except ImportError:
+        # qrcode not installed — skip gracefully. The URL is still shown.
+        pass
+    except Exception:
+        # Any rendering issue — the URL was already shown, so this is safe.
+        pass
 
 
 def _parse_positive_int(value: str, fallback: int) -> int:

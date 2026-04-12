@@ -28,6 +28,7 @@ dependencies = [
     "aiosqlite>=0.20",
     "PyYAML>=6.0",
     "prometheus-client>=0.20",
+    "qrcode>=7.4",
 ]
 
 [project.optional-dependencies]
@@ -93,6 +94,9 @@ ignore = [
 # The `claude_agent_sdk` import is deferred on purpose so unit tests using
 # FakeClaude never need the real SDK installed.
 "src/datronis_relay/infrastructure/claude_client.py" = ["PLC0415"]
+# qrcode is imported lazily inside _show_login_url so the setup wizard
+# works even if the library is missing (URL is still shown as text).
+"src/datronis_relay/cli/setup.py" = ["PLC0415"]
 # Doctor is a linear sequence of 7 independent config checks — splitting
 # them across helper functions would obscure the structure, not clarify it.
 "src/datronis_relay/cli/doctor.py" = ["PLR0912", "PLR0915"]
@@ -115,6 +119,7 @@ module = [
     "yaml.*",
     "aiohttp.*",
     "aiosqlite.*",
+    "qrcode.*",
 ]
 ignore_missing_imports = true
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import os
 import shutil
 import stat
@@ -13,6 +14,7 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
+from datronis_relay.cli import setup as cli_setup_mod
 from datronis_relay.cli.doctor import DoctorOptions, run_doctor
 from datronis_relay.cli.prompts import ScriptedPrompter
 from datronis_relay.cli.setup import (
@@ -21,7 +23,9 @@ from datronis_relay.cli.setup import (
     _build_users,
     _ensure_claude_cli_available,
     _install_claude_cli_via_npm,
+    _is_claude_already_logged_in,
     _maybe_run_claude_login,
+    _show_login_url,
     _write_config,
     _write_env,
     run_setup,
@@ -55,8 +59,6 @@ def _happy_path_script(*, slack: bool = False, use_api_key: bool = False) -> lis
             2,  # ask_choice — permissions (Full)
             "25",  # ask — per_minute
             "500",  # ask — per_day
-            "./tmp/relay.db",  # ask — sqlite path
-            "./tmp/attachments",  # ask — attachments path
         ]
     )
     return script
@@ -160,17 +162,13 @@ class TestWriteConfig:
         data = yaml.safe_load(path.read_text())
         assert "claude-sonnet-4-6" in data["cost"]["pricing"]
 
-    def test_storage_paths_are_persisted(self, tmp_path: Path) -> None:
-        collected = CollectedConfig(
-            telegram_user_id="1",
-            sqlite_path="/var/lib/datronis-relay/relay.db",
-            attachments_path="/var/lib/datronis-relay/attachments",
-        )
+    def test_storage_paths_use_defaults(self, tmp_path: Path) -> None:
+        collected = CollectedConfig(telegram_user_id="1")
         path = tmp_path / "config.yaml"
         _write_config(path, collected)
         data = yaml.safe_load(path.read_text())
-        assert data["storage"]["sqlite_path"] == "/var/lib/datronis-relay/relay.db"
-        assert data["attachments"]["temp_dir"] == "/var/lib/datronis-relay/attachments"
+        assert data["storage"]["sqlite_path"] == "./data/relay.db"
+        assert data["attachments"]["temp_dir"] == "./data/attachments"
 
 
 # -------------------------------------------------------------------- _build_users
@@ -398,6 +396,39 @@ class TestInstallClaudeCliViaNpm:
         assert _install_claude_cli_via_npm(prompter) is False
 
 
+class TestIsClaudeAlreadyLoggedIn:
+    def test_returns_true_when_dot_claude_has_content(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir()
+        (claude_dir / "credentials.json").write_text("{}")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        assert _is_claude_already_logged_in() is True
+
+    def test_returns_true_for_xdg_config_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config_dir = tmp_path / ".config" / "claude"
+        config_dir.mkdir(parents=True)
+        (config_dir / "auth.json").write_text("{}")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        assert _is_claude_already_logged_in() is True
+
+    def test_returns_false_when_no_dirs_exist(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        assert _is_claude_already_logged_in() is False
+
+    def test_returns_false_when_dir_exists_but_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        (tmp_path / ".claude").mkdir()
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        assert _is_claude_already_logged_in() is False
+
+
 class TestMaybeRunClaudeLogin:
     def test_claude_not_on_path_skips(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: None)
@@ -406,53 +437,137 @@ class TestMaybeRunClaudeLogin:
         _maybe_run_claude_login(prompter, collected)
         assert not collected.claude_login_done
 
-    def test_user_declines_login(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_already_logged_in_skips_prompt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir()
+        (claude_dir / "creds").write_text("{}")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([])  # no prompts needed
+        _maybe_run_claude_login(prompter, collected)
+        assert collected.claude_login_done
+        assert any("existing" in line.lower() for line in prompter.output)
+
+    def test_user_declines_login(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)  # empty home → not logged in
         collected = CollectedConfig()
         prompter = ScriptedPrompter([False])  # decline
         _maybe_run_claude_login(prompter, collected)
         assert not collected.claude_login_done
         assert any("Skipping" in line for line in prompter.output)
 
-    def test_login_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_login_success_with_url(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
-        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        monkeypatch.setattr(
+            cli_setup_mod,
+            "_run_claude_login_with_url_capture",
+            lambda: (True, "https://claude.ai/login/device?code=ABCD"),
+        )
         collected = CollectedConfig()
         prompter = ScriptedPrompter([True])  # accept
         _maybe_run_claude_login(prompter, collected)
         assert collected.claude_login_done
 
-    def test_login_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_login_success_without_url(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
-        monkeypatch.setattr(subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=1))
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        monkeypatch.setattr(
+            cli_setup_mod,
+            "_run_claude_login_with_url_capture",
+            lambda: (True, ""),
+        )
         collected = CollectedConfig()
-        prompter = ScriptedPrompter([True])  # accept
+        prompter = ScriptedPrompter([True])
+        _maybe_run_claude_login(prompter, collected)
+        assert collected.claude_login_done
+
+    def test_login_failure_then_decline_retry(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        monkeypatch.setattr(
+            cli_setup_mod, "_run_claude_login_with_url_capture", lambda: (False, "")
+        )
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True, False])  # accept → fails → decline retry
         _maybe_run_claude_login(prompter, collected)
         assert not collected.claude_login_done
 
-    def test_login_command_not_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_login_failure_then_retry_then_success(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        call_count = {"n": 0}
 
-        def _boom(*_a: object, **_k: object) -> object:
+        def _alternating() -> tuple[bool, str]:
+            call_count["n"] += 1
+            return (False, "") if call_count["n"] == 1 else (True, "")
+
+        monkeypatch.setattr(cli_setup_mod, "_run_claude_login_with_url_capture", _alternating)
+        collected = CollectedConfig()
+        prompter = ScriptedPrompter([True, True])  # accept → fails → retry → succeeds
+        _maybe_run_claude_login(prompter, collected)
+        assert collected.claude_login_done
+
+    def test_login_file_not_found(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        def _boom() -> tuple[bool, str]:
             raise FileNotFoundError("claude")
 
-        monkeypatch.setattr(subprocess, "run", _boom)
+        monkeypatch.setattr(cli_setup_mod, "_run_claude_login_with_url_capture", _boom)
         collected = CollectedConfig()
         prompter = ScriptedPrompter([True])
         _maybe_run_claude_login(prompter, collected)
         assert not collected.claude_login_done
 
-    def test_login_os_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_login_os_error_then_decline(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/claude")
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-        def _boom(*_a: object, **_k: object) -> object:
+        def _boom() -> tuple[bool, str]:
             raise OSError("broken pipe")
 
-        monkeypatch.setattr(subprocess, "run", _boom)
+        monkeypatch.setattr(cli_setup_mod, "_run_claude_login_with_url_capture", _boom)
         collected = CollectedConfig()
-        prompter = ScriptedPrompter([True])
+        prompter = ScriptedPrompter([True, False])  # accept → error → decline
         _maybe_run_claude_login(prompter, collected)
         assert not collected.claude_login_done
+
+
+class TestShowLoginUrl:
+    def test_displays_url_and_qr(self) -> None:
+        prompter = ScriptedPrompter([])
+        _show_login_url(prompter, "https://claude.ai/login/test")
+        combined = "\n".join(prompter.output)
+        assert "https://claude.ai/login/test" in combined
+        assert "Copy this URL" in combined
+
+    def test_handles_missing_qrcode_library(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        real_import = builtins.__import__
+
+        def _block_qrcode(name: str, *args: object, **kwargs: object) -> object:
+            if name == "qrcode":
+                raise ImportError("no qrcode")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _block_qrcode)
+        prompter = ScriptedPrompter([])
+        _show_login_url(prompter, "https://example.com")
+        # URL is still displayed even without qrcode library
+        assert any("https://example.com" in line for line in prompter.output)
 
 
 class TestDoctor:
