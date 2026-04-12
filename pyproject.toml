@@ -93,6 +93,9 @@ ignore = [
 # The `claude_agent_sdk` import is deferred on purpose so unit tests using
 # FakeClaude never need the real SDK installed.
 "src/datronis_relay/infrastructure/claude_client.py" = ["PLC0415"]
+# Doctor is a linear sequence of 7 independent config checks — splitting
+# them across helper functions would obscure the structure, not clarify it.
+"src/datronis_relay/cli/doctor.py" = ["PLR0912", "PLR0915"]
 
 [tool.mypy]
 python_version = "3.11"

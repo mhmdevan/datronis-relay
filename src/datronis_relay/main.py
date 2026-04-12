@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import contextlib
+import os
 import signal
 import sys
+from pathlib import Path
 from typing import Protocol
 
 import structlog
@@ -11,6 +14,8 @@ import structlog
 from datronis_relay import __version__
 from datronis_relay.adapters.slack.bot import SlackAdapter
 from datronis_relay.adapters.telegram.bot import TelegramAdapter
+from datronis_relay.cli.doctor import DoctorOptions, run_doctor
+from datronis_relay.cli.setup import DEFAULT_CONFIG_PATH, DEFAULT_ENV_PATH, SetupOptions, run_setup
 from datronis_relay.core.auth import AuthGuard
 from datronis_relay.core.command_router import CommandRouter
 from datronis_relay.core.cost_tracker import CostTracker
@@ -200,7 +205,109 @@ async def _run_until_stopped(runnables: list[_Runnable]) -> None:
             raise exc
 
 
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="datronis-relay",
+        description=(
+            "Chat bridge for the Claude Agent SDK. Run with no arguments to "
+            "start the bot; use a subcommand to set up or validate your config."
+        ),
+    )
+    parser.add_argument("--version", action="version", version=f"datronis-relay {__version__}")
+
+    subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
+
+    setup_parser = subparsers.add_parser(
+        "setup",
+        help="Interactive setup wizard — creates config.yaml and .env",
+    )
+    setup_parser.add_argument(
+        "--config",
+        default=str(DEFAULT_CONFIG_PATH),
+        help="Path to the config file to write (default: ./config.yaml)",
+    )
+    setup_parser.add_argument(
+        "--env",
+        default=str(DEFAULT_ENV_PATH),
+        help="Path to the .env file to write (default: ./.env)",
+    )
+    setup_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing config without prompting",
+    )
+    setup_parser.add_argument(
+        "--skip-validation",
+        action="store_true",
+        help="Skip the api.telegram.org/getMe network check",
+    )
+
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="Validate an existing config and report problems",
+    )
+    doctor_parser.add_argument(
+        "--config",
+        default=str(DEFAULT_CONFIG_PATH),
+        help="Path to the config file to check (default: ./config.yaml)",
+    )
+
+    return parser
+
+
+def _dispatch_subcommand(args: argparse.Namespace) -> int:
+    """Route a parsed argparse namespace to the right CLI handler."""
+    if args.command == "setup":
+        return run_setup(
+            SetupOptions(
+                config_path=Path(args.config),
+                env_path=Path(args.env),
+                force=args.force,
+                skip_validation=args.skip_validation,
+            )
+        )
+    if args.command == "doctor":
+        return run_doctor(DoctorOptions(config_path=Path(args.config)))
+    raise AssertionError(f"unknown subcommand: {args.command}")  # pragma: no cover
+
+
+def _maybe_offer_first_run_setup() -> bool:
+    """If no config exists and stdin is a TTY, offer to run the wizard.
+
+    Returns True if setup was run successfully (caller should continue to
+    the bot), False if setup was declined or failed (caller should error
+    out with the original "config missing" message).
+    """
+    config_path = Path(os.getenv("DATRONIS_CONFIG_PATH") or DEFAULT_CONFIG_PATH)
+    if config_path.exists():
+        return False  # not a first run, nothing to offer
+    if not sys.stdin.isatty():
+        return False  # headless (Docker, systemd) — fail loudly via _run()
+
+    print(f"No config file found at {config_path}.")
+    print()
+    response = input("Run the setup wizard now? [Y/n]: ").strip().lower()
+    if response not in ("", "y", "yes"):
+        print("Aborted. Run `datronis-relay setup` when you're ready.")
+        sys.exit(1)
+
+    result = run_setup(SetupOptions(config_path=config_path))
+    if result != 0:
+        sys.exit(result)
+    return True
+
+
 def main() -> None:
+    parser = _build_arg_parser()
+    args = parser.parse_args()
+
+    if args.command is not None:
+        sys.exit(_dispatch_subcommand(args))
+
+    # No subcommand — start the bot. If config is missing and we're on a
+    # TTY, offer to run the wizard first.
+    _maybe_offer_first_run_setup()
+
     try:
         asyncio.run(_run())
     except KeyboardInterrupt:

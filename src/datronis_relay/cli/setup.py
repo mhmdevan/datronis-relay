@@ -1,0 +1,431 @@
+"""Interactive setup wizard — `datronis-relay setup`.
+
+Collects every value `datronis-relay` needs at runtime (Telegram bot
+token, user id, Claude auth choice, optional Slack tokens, rate limits,
+storage paths) via a `Prompter` dependency, then writes a `config.yaml`
+and `.env` pair to disk.
+
+The wizard depends on an injected `Prompter` so unit tests can drive it
+with a scripted fake — no stdin/stdout interaction in tests.
+"""
+
+from __future__ import annotations
+
+import contextlib
+import json
+import re
+import stat
+import urllib.error
+import urllib.request
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from datronis_relay.cli.prompts import CliPrompter, Prompter
+
+# Telegram tokens look like "<numeric_bot_id>:<base64-ish secret>".
+_TELEGRAM_TOKEN_RE = re.compile(r"^\d+:[A-Za-z0-9_-]+$")
+# Telegram user ids and chat ids are numeric (can be negative for groups).
+_USER_ID_RE = re.compile(r"^-?\d+$")
+# Anthropic keys currently start with `sk-ant-` but we only use this as a hint.
+_ANTHROPIC_KEY_RE = re.compile(r"^sk-ant-[A-Za-z0-9_-]+$")
+
+DEFAULT_CONFIG_PATH = Path("./config.yaml")
+DEFAULT_ENV_PATH = Path("./.env")
+
+# Pricing snapshot included in the generated config. Users should update
+# these numbers to whatever Anthropic publishes for their subscription tier.
+_DEFAULT_PRICING: dict[str, dict[str, float]] = {
+    "claude-sonnet-4-6": {"input_usd_per_mtok": 3.0, "output_usd_per_mtok": 15.0},
+    "claude-opus-4-6": {"input_usd_per_mtok": 15.0, "output_usd_per_mtok": 75.0},
+    "claude-haiku-4-5-20251001": {
+        "input_usd_per_mtok": 1.0,
+        "output_usd_per_mtok": 5.0,
+    },
+}
+
+
+@dataclass
+class SetupOptions:
+    config_path: Path = DEFAULT_CONFIG_PATH
+    env_path: Path = DEFAULT_ENV_PATH
+    force: bool = False
+    skip_validation: bool = False
+
+
+@dataclass
+class CollectedConfig:
+    """Everything the wizard gathers before writing files."""
+
+    telegram_token: str = ""
+    telegram_user_id: str = ""
+    display_name: str = "Me"
+    use_api_key: bool = False
+    anthropic_api_key: str = ""
+    enable_slack: bool = False
+    slack_bot_token: str = ""
+    slack_app_token: str = ""
+    slack_user_id: str = ""
+    allowed_tools: list[str] = field(default_factory=lambda: ["Read", "Write", "Bash"])
+    rate_limit_per_minute: int = 20
+    rate_limit_per_day: int = 1000
+    sqlite_path: str = "./data/relay.db"
+    attachments_path: str = "./data/attachments"
+    claude_model: str = "claude-sonnet-4-6"
+
+
+# --------------------------------------------------------------------- entrypoint
+
+
+def run_setup(
+    options: SetupOptions,
+    prompter: Prompter | None = None,
+) -> int:
+    """Top-level wizard. Returns 0 on success, non-zero on abort/failure."""
+    active_prompter: Prompter = prompter if prompter is not None else CliPrompter()
+
+    _print_header(active_prompter)
+
+    if not options.force and (options.config_path.exists() or options.env_path.exists()):
+        active_prompter.say(
+            f"Existing config found at {options.config_path} or {options.env_path}."
+        )
+        if not active_prompter.confirm("Overwrite them?", default=False):
+            active_prompter.say("")
+            active_prompter.say("Aborted. Re-run with --force to overwrite without asking.")
+            return 1
+
+    try:
+        collected = _collect_all(active_prompter, options)
+    except KeyboardInterrupt:
+        active_prompter.say("")
+        active_prompter.say("Aborted by user (Ctrl+C).")
+        return 130
+
+    _write_config(options.config_path, collected)
+    _write_env(options.env_path, collected)
+
+    _print_footer(active_prompter, collected, options)
+    return 0
+
+
+# ---------------------------------------------------------------------- headers
+
+
+def _print_header(prompter: Prompter) -> None:
+    prompter.say("")
+    prompter.say("=" * 60)
+    prompter.say("  datronis-relay setup wizard")
+    prompter.say("=" * 60)
+    prompter.say("")
+    prompter.say("This wizard creates config.yaml and .env for you.")
+    prompter.say("Press Ctrl+C at any time to abort.")
+    prompter.say("")
+
+
+def _print_footer(prompter: Prompter, collected: CollectedConfig, options: SetupOptions) -> None:
+    prompter.say("")
+    prompter.say("=" * 60)
+    prompter.say("  Setup complete")
+    prompter.say("=" * 60)
+    prompter.say(f"  Config:  {options.config_path}")
+    prompter.say(f"  Secrets: {options.env_path}")
+    prompter.say("")
+
+    if not collected.use_api_key:
+        prompter.say("Next — authenticate with Claude:")
+        prompter.say("  claude login")
+        prompter.say("")
+        prompter.say("  (Follow the device-code URL in the output. Opens in any browser.)")
+        prompter.say("")
+
+    prompter.say("Then start the bot:")
+    prompter.say("  datronis-relay")
+    prompter.say("")
+
+
+# -------------------------------------------------------------------- collection
+
+
+def _collect_all(prompter: Prompter, options: SetupOptions) -> CollectedConfig:
+    collected = CollectedConfig()
+    _collect_telegram_token(prompter, collected)
+    _collect_user(prompter, collected)
+    _collect_claude_auth(prompter, collected)
+    _collect_slack(prompter, collected)
+    _collect_permissions(prompter, collected)
+    _collect_storage(prompter, collected)
+    if not options.skip_validation:
+        _validate_telegram_online(prompter, collected.telegram_token)
+    return collected
+
+
+def _collect_telegram_token(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 1 of 6 — Telegram bot token")
+    prompter.say("  Create a bot via @BotFather on Telegram.")
+    prompter.say("  The token looks like:  123456789:ABC-xyz_...")
+    prompter.say("")
+    while True:
+        token = prompter.ask_secret("Bot token").strip()
+        if not token:
+            prompter.say("  Token cannot be empty.")
+            continue
+        if not _TELEGRAM_TOKEN_RE.match(token):
+            prompter.say("  That does not look like a valid Telegram bot token.")
+            if not prompter.confirm("  Use it anyway?", default=False):
+                continue
+        collected.telegram_token = token
+        prompter.say("  Saved.")
+        prompter.say("")
+        return
+
+
+def _collect_user(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 2 of 6 — Your Telegram user id")
+    prompter.say("  Send /start to @userinfobot — it replies with your numeric id.")
+    prompter.say("")
+    while True:
+        raw = prompter.ask("Your numeric user id").strip()
+        if _USER_ID_RE.match(raw):
+            collected.telegram_user_id = raw
+            break
+        prompter.say("  User id should be a number, e.g. 123456789.")
+
+    collected.display_name = prompter.ask("Display name (optional)", default="Me")
+    prompter.say(f"  Will be added as telegram:{collected.telegram_user_id}")
+    prompter.say("")
+
+
+def _collect_claude_auth(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 3 of 6 — Claude authentication")
+    prompter.say("")
+    choice = prompter.ask_choice(
+        "How do you want to authenticate with Claude?",
+        [
+            "Subscription (Claude Pro / Max / Teams / Enterprise) — recommended",
+            "API key (pay-per-token via console.anthropic.com)",
+        ],
+        default=0,
+    )
+
+    if choice == 0:
+        collected.use_api_key = False
+        prompter.say("")
+        prompter.say("  You'll run `claude login` after this wizard completes.")
+        prompter.say("  No ANTHROPIC_API_KEY will be stored.")
+    else:
+        collected.use_api_key = True
+        while True:
+            key = prompter.ask_secret("Anthropic API key (sk-ant-...)").strip()
+            if not key:
+                prompter.say("  API key cannot be empty.")
+                continue
+            if not _ANTHROPIC_KEY_RE.match(key):
+                prompter.say("  That does not look like a valid Anthropic API key.")
+                if not prompter.confirm("  Use it anyway?", default=False):
+                    continue
+            collected.anthropic_api_key = key
+            prompter.say("  Saved.")
+            break
+    prompter.say("")
+
+
+def _collect_slack(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 4 of 6 — Slack adapter (optional)")
+    if not prompter.confirm("  Enable Slack too?", default=False):
+        prompter.say("  Skipping.")
+        prompter.say("")
+        return
+
+    collected.enable_slack = True
+    prompter.say("  See docs/slack_setup.md for how to create the Slack app.")
+    collected.slack_bot_token = prompter.ask_secret("Slack bot token (xoxb-...)").strip()
+    collected.slack_app_token = prompter.ask_secret("Slack app token (xapp-...)").strip()
+    collected.slack_user_id = prompter.ask("Your Slack user id (U...)").strip()
+    prompter.say("  Saved.")
+    prompter.say("")
+
+
+def _collect_permissions(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 5 of 6 — Permissions and rate limits")
+    prompter.say("")
+    choice = prompter.ask_choice(
+        "Which tools should Claude be allowed to use?",
+        [
+            "Safe — Read only (for file inspection + vision)",
+            "Standard — Read + Bash (can run commands)",
+            "Full — Read + Write + Bash (can modify files)",
+        ],
+        default=2,
+    )
+
+    if choice == 0:
+        collected.allowed_tools = ["Read"]
+    elif choice == 1:
+        collected.allowed_tools = ["Read", "Bash"]
+    else:
+        collected.allowed_tools = ["Read", "Write", "Bash"]
+
+    prompter.say("")
+    per_minute = prompter.ask("Requests per minute", default="20")
+    per_day = prompter.ask("Requests per day", default="1000")
+    collected.rate_limit_per_minute = _parse_positive_int(per_minute, fallback=20)
+    collected.rate_limit_per_day = _parse_positive_int(per_day, fallback=1000)
+    prompter.say("")
+
+
+def _collect_storage(prompter: Prompter, collected: CollectedConfig) -> None:
+    prompter.say("Step 6 of 6 — Storage paths")
+    prompter.say("  If you run via Docker Compose, use absolute paths under")
+    prompter.say("  /var/lib/datronis-relay/ so the named volume persists them.")
+    prompter.say("")
+    collected.sqlite_path = prompter.ask("SQLite database path", default="./data/relay.db")
+    collected.attachments_path = prompter.ask("Attachments temp dir", default="./data/attachments")
+    prompter.say("")
+
+
+def _parse_positive_int(value: str, fallback: int) -> int:
+    try:
+        parsed = int(value.strip())
+    except (ValueError, AttributeError):
+        return fallback
+    return parsed if parsed > 0 else fallback
+
+
+# --------------------------------------------------------------------- validation
+
+
+def _validate_telegram_online(prompter: Prompter, token: str) -> None:
+    """Optional network check — best effort, never fatal."""
+    prompter.say("Validating Telegram token against api.telegram.org...")
+    url = f"https://api.telegram.org/bot{token}/getMe"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            body = response.read()
+        data = json.loads(body)
+        if data.get("ok"):
+            username = data.get("result", {}).get("username", "unknown")
+            prompter.say(f"  OK — bot username: @{username}")
+        else:
+            prompter.say(f"  Warning: Telegram returned not-ok: {data!r}")
+    except urllib.error.HTTPError as exc:
+        prompter.say(f"  Warning: Telegram returned HTTP {exc.code} — your token may be invalid.")
+    except urllib.error.URLError as exc:
+        prompter.say(f"  Warning: could not reach Telegram ({exc.reason}).")
+        prompter.say("  (The bot will fail at runtime if the token is wrong.)")
+    except (OSError, json.JSONDecodeError) as exc:
+        prompter.say(f"  Warning: unexpected error during validation ({exc}).")
+    prompter.say("")
+
+
+# --------------------------------------------------------------------- file I/O
+
+
+def _write_config(path: Path, collected: CollectedConfig) -> None:
+    data: dict[str, Any] = {
+        "telegram": {
+            "enabled": True,
+            # Real value lives in .env as DATRONIS_TELEGRAM_BOT_TOKEN.
+            "bot_token": "",
+        },
+        "slack": {
+            "enabled": collected.enable_slack,
+            "bot_token": "",
+            "app_token": "",
+        },
+        "claude": {
+            "model": collected.claude_model,
+            "max_turns": 10,
+        },
+        "storage": {
+            "sqlite_path": collected.sqlite_path,
+        },
+        "attachments": {
+            "enabled": True,
+            "max_bytes_per_file": 10 * 1024 * 1024,
+            "temp_dir": collected.attachments_path,
+        },
+        "logging": {
+            "level": "INFO",
+            # YAML key stays `json` (the pydantic alias); Python attribute
+            # is `json_output`. See docs/api_reference.md.
+            "json": True,
+        },
+        "scheduler": {
+            "enabled": True,
+            "poll_interval_seconds": 30,
+            "max_tasks_per_user": 50,
+            "batch_limit": 10,
+        },
+        "metrics": {
+            "enabled": False,
+            "host": "127.0.0.1",
+            "port": 9464,
+        },
+        "users": _build_users(collected),
+        "cost": {"pricing": _DEFAULT_PRICING},
+    }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    header = (
+        "# datronis-relay config — generated by `datronis-relay setup`.\n"
+        "# Secrets live in .env (DATRONIS_TELEGRAM_BOT_TOKEN, etc.); the values\n"
+        "# here with empty strings are populated from those env vars at runtime.\n"
+        "# See config.example.yaml for the full reference with comments.\n"
+        "\n"
+    )
+    body = yaml.safe_dump(data, sort_keys=False, indent=2, allow_unicode=True)
+    path.write_text(header + body)
+
+
+def _build_users(collected: CollectedConfig) -> list[dict[str, Any]]:
+    users: list[dict[str, Any]] = [
+        {
+            "id": f"telegram:{collected.telegram_user_id}",
+            "display_name": collected.display_name,
+            "allowed_tools": collected.allowed_tools,
+            "rate_limit": {
+                "per_minute": collected.rate_limit_per_minute,
+                "per_day": collected.rate_limit_per_day,
+            },
+        }
+    ]
+    if collected.enable_slack and collected.slack_user_id:
+        users.append(
+            {
+                "id": f"slack:{collected.slack_user_id}",
+                "display_name": f"{collected.display_name} (Slack)",
+                "allowed_tools": collected.allowed_tools,
+                "rate_limit": {
+                    "per_minute": collected.rate_limit_per_minute,
+                    "per_day": collected.rate_limit_per_day,
+                },
+            }
+        )
+    return users
+
+
+def _write_env(path: Path, collected: CollectedConfig) -> None:
+    lines: list[str] = [
+        "# datronis-relay secrets — DO NOT COMMIT",
+        "# Generated by `datronis-relay setup`",
+        "",
+        f"DATRONIS_TELEGRAM_BOT_TOKEN={collected.telegram_token}",
+    ]
+    if collected.use_api_key:
+        lines.append(f"ANTHROPIC_API_KEY={collected.anthropic_api_key}")
+    if collected.enable_slack:
+        lines.append(f"DATRONIS_SLACK_BOT_TOKEN={collected.slack_bot_token}")
+        lines.append(f"DATRONIS_SLACK_APP_TOKEN={collected.slack_app_token}")
+    lines.append("")  # trailing newline
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines))
+
+    # Protect the secrets file: owner read/write only. Best-effort — on
+    # filesystems that don't support POSIX permissions (Windows mostly)
+    # the chmod is silently ignored.
+    with contextlib.suppress(PermissionError, OSError):
+        path.chmod(stat.S_IRUSR | stat.S_IWUSR)

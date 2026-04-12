@@ -6,6 +6,7 @@ network calls are made.
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import pytest
 from pydantic import SecretStr
@@ -219,3 +220,184 @@ class TestRunUntilStopped:
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
+
+
+class TestBuildArgParser:
+    def test_no_args_command_is_none(self) -> None:
+        parser = main_module._build_arg_parser()
+        args = parser.parse_args([])
+        assert args.command is None
+
+    def test_setup_subcommand_with_defaults(self) -> None:
+        parser = main_module._build_arg_parser()
+        args = parser.parse_args(["setup"])
+        assert args.command == "setup"
+        assert args.force is False
+        assert args.skip_validation is False
+        assert args.config.endswith("config.yaml")
+        assert args.env.endswith(".env")
+
+    def test_setup_subcommand_with_flags(self, tmp_path: Path) -> None:
+        parser = main_module._build_arg_parser()
+        cfg = tmp_path / "cfg.yaml"
+        env = tmp_path / "env.txt"
+        args = parser.parse_args(
+            [
+                "setup",
+                "--force",
+                "--skip-validation",
+                "--config",
+                str(cfg),
+                "--env",
+                str(env),
+            ]
+        )
+        assert args.command == "setup"
+        assert args.force is True
+        assert args.skip_validation is True
+        assert args.config == str(cfg)
+        assert args.env == str(env)
+
+    def test_doctor_subcommand(self, tmp_path: Path) -> None:
+        parser = main_module._build_arg_parser()
+        args = parser.parse_args(["doctor", "--config", str(tmp_path / "x.yaml")])
+        assert args.command == "doctor"
+        assert args.config == str(tmp_path / "x.yaml")
+
+    def test_version_flag_exits_cleanly(self) -> None:
+        parser = main_module._build_arg_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(["--version"])
+        assert exc_info.value.code == 0
+
+
+class TestDispatchSubcommand:
+    def test_setup_calls_run_setup(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        captured: dict[str, object] = {}
+
+        def _fake_run_setup(options: object) -> int:
+            captured["options"] = options
+            return 42
+
+        monkeypatch.setattr(main_module, "run_setup", _fake_run_setup)
+
+        parser = main_module._build_arg_parser()
+        args = parser.parse_args(
+            [
+                "setup",
+                "--config",
+                str(tmp_path / "c.yaml"),
+                "--env",
+                str(tmp_path / "e"),
+                "--force",
+            ]
+        )
+        result = main_module._dispatch_subcommand(args)
+        assert result == 42
+        assert "options" in captured
+
+    def test_doctor_calls_run_doctor(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        captured: dict[str, object] = {}
+
+        def _fake_run_doctor(options: object) -> int:
+            captured["options"] = options
+            return 7
+
+        monkeypatch.setattr(main_module, "run_doctor", _fake_run_doctor)
+
+        parser = main_module._build_arg_parser()
+        args = parser.parse_args(["doctor", "--config", str(tmp_path / "c.yaml")])
+        result = main_module._dispatch_subcommand(args)
+        assert result == 7
+        assert "options" in captured
+
+
+class TestMaybeOfferFirstRunSetup:
+    def test_returns_false_when_config_exists(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = tmp_path / "config.yaml"
+        config.write_text("{}")
+        monkeypatch.setenv("DATRONIS_CONFIG_PATH", str(config))
+        assert main_module._maybe_offer_first_run_setup() is False
+
+    def test_returns_false_when_not_tty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        missing = tmp_path / "missing.yaml"
+        monkeypatch.setenv("DATRONIS_CONFIG_PATH", str(missing))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+        assert main_module._maybe_offer_first_run_setup() is False
+
+    def test_user_declines_wizard_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        missing = tmp_path / "missing.yaml"
+        monkeypatch.setenv("DATRONIS_CONFIG_PATH", str(missing))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr("builtins.input", lambda _="": "n")
+        with pytest.raises(SystemExit) as exc_info:
+            main_module._maybe_offer_first_run_setup()
+        assert exc_info.value.code == 1
+
+    def test_user_accepts_then_wizard_succeeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        missing = tmp_path / "missing.yaml"
+        monkeypatch.setenv("DATRONIS_CONFIG_PATH", str(missing))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr("builtins.input", lambda _="": "y")
+        monkeypatch.setattr(main_module, "run_setup", lambda _: 0)
+        assert main_module._maybe_offer_first_run_setup() is True
+
+    def test_user_accepts_but_wizard_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        missing = tmp_path / "missing.yaml"
+        monkeypatch.setenv("DATRONIS_CONFIG_PATH", str(missing))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setattr("builtins.input", lambda _="": "")  # empty → default yes
+        monkeypatch.setattr(main_module, "run_setup", lambda _: 130)
+        with pytest.raises(SystemExit) as exc_info:
+            main_module._maybe_offer_first_run_setup()
+        assert exc_info.value.code == 130
+
+
+class TestMainEntrypoint:
+    def test_setup_subcommand_exits_with_run_setup_result(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(main_module, "run_setup", lambda _: 0)
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "datronis-relay",
+                "setup",
+                "--force",
+                "--skip-validation",
+                "--config",
+                str(tmp_path / "c.yaml"),
+                "--env",
+                str(tmp_path / "e"),
+            ],
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            main_module.main()
+        assert exc_info.value.code == 0
+
+    def test_doctor_subcommand_exits_with_run_doctor_result(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(main_module, "run_doctor", lambda _: 3)
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "datronis-relay",
+                "doctor",
+                "--config",
+                str(tmp_path / "c.yaml"),
+            ],
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            main_module.main()
+        assert exc_info.value.code == 3
