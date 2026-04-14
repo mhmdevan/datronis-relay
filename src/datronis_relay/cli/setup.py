@@ -342,9 +342,13 @@ ExecStart={exec_start}
 Restart=on-failure
 RestartSec=5s
 
+# Sandbox: keep the system tree read-only, but leave $HOME visible and
+# writable. The bundled Claude Code CLI reads its credentials from
+# ~/.claude/.credentials.json and refreshes them in place — hiding $HOME
+# with ProtectHome= would make the SDK's initialize handshake hang and
+# time out. ReadWritePaths below still scopes writes to workdir + home.
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
 PrivateTmp=true
 PrivateDevices=true
 ReadWritePaths={workdir} {home}
