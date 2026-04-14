@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "Verwaltungs-Dashboard"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "Benutzer",
+    "adapters": "Adapter",
+    "tasks": "Geplante Aufgaben",
+    "cost": "Kostenübersicht",
+    "audit": "Audit-Protokoll",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Live-Status, Kosten und Aktivität Ihres Relays",
+    "status": "Systemstatus",
+    "version": "Version",
+    "uptime": "Betriebszeit",
+    "adapters": "Adapter",
+    "scheduler": "Scheduler",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "running": "Läuft",
+    "stopped": "Gestoppt",
+    "costToday": "Kosten heute",
+    "costWeek": "Kosten (7 Tage)",
+    "costMonth": "Kosten (30 Tage)",
+    "recentActivity": "Letzte Aktivität",
+    "noActivity": "Keine kürzliche Aktivität",
+    "loadError": "Dashboard-Daten konnten nicht geladen werden",
+    "quickActions": "Schnellaktionen",
+    "addUser": "Benutzer hinzufügen",
+    "createTask": "Aufgabe erstellen"
+  },
+  "users": {
+    "title": "Benutzer",
+    "subtitle": "Plattform-Benutzer, Tool-Berechtigungen und Ratenlimits verwalten",
+    "add": "Benutzer hinzufügen",
+    "edit": "Benutzer bearbeiten",
+    "delete": "Benutzer löschen",
+    "save": "Benutzer speichern",
+    "create": "Benutzer erstellen",
+    "confirmDelete": "Möchten Sie {name} wirklich löschen? Die geplanten Aufgaben werden deaktiviert.",
+    "deleteTitle": "Benutzer löschen?",
+    "deleteDescription": "Alle geplanten Aufgaben von {name} werden deaktiviert. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "created": "Benutzer erfolgreich erstellt",
+    "updated": "Benutzer erfolgreich aktualisiert",
+    "deleted": "Benutzer erfolgreich gelöscht",
+    "createFailed": "Benutzer konnte nicht erstellt werden",
+    "updateFailed": "Benutzer konnte nicht aktualisiert werden",
+    "deleteFailed": "Benutzer konnte nicht gelöscht werden",
+    "loadError": "Benutzer konnten nicht geladen werden",
+    "empty": "Noch keine Benutzer konfiguriert",
+    "addFirst": "Fügen Sie Ihren ersten Benutzer hinzu",
+    "notFound": "Benutzer nicht gefunden",
+    "lastActive": "Zuletzt aktiv",
+    "never": "Nie",
+    "fields": {
+      "id": "Benutzer-ID",
+      "displayName": "Anzeigename",
+      "platform": "Plattform",
+      "allowedTools": "Erlaubte Tools",
+      "ratePerMinute": "Anfragen / Minute",
+      "ratePerDay": "Anfragen / Tag"
+    },
+    "placeholders": {
+      "id": "z. B. 123456789",
+      "displayName": "z. B. Alice"
+    },
+    "hints": {
+      "id": "Numerische ID von der Plattform (Präfix wird automatisch hinzugefügt)",
+      "allowedTools": "Wählen Sie aus, welche Tools dieser Benutzer über das Relay aufrufen darf"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "Lesen",
+      "write": "Schreiben",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "Benutzer-ID ist erforderlich",
+      "idNumeric": "Benutzer-ID muss numerisch sein",
+      "nameRequired": "Anzeigename ist erforderlich",
+      "nameTooLong": "Anzeigename darf höchstens 64 Zeichen lang sein",
+      "ratePositive": "Ratenlimit muss eine positive Zahl sein",
+      "toolsRequired": "Mindestens ein Tool muss ausgewählt sein"
+    }
+  },
+  "adapters": {
+    "title": "Adapter",
+    "subtitle": "Plattformen aktivieren oder deaktivieren und API-Token rotieren",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "healthy": "Fehlerfrei",
+    "unhealthy": "Problem",
+    "tokenSet": "Token konfiguriert",
+    "tokenMissing": "Token fehlt",
+    "rotateToken": "Token rotieren",
+    "rotateTokenTitle": "{adapter}-Token rotieren",
+    "rotateTokenDescription": "Fügen Sie das neue Bot-Token ein. Der Bot übernimmt das neue Token beim nächsten Neustart.",
+    "newToken": "Neues Token",
+    "newTokenPlaceholder": "Neues Token einfügen",
+    "updated": "Adapter aktualisiert",
+    "tokenRotated": "Token rotiert",
+    "loadError": "Adapter konnten nicht geladen werden",
+    "updateFailed": "Adapter konnte nicht aktualisiert werden",
+    "rotateFailed": "Token konnte nicht rotiert werden",
+    "empty": "Keine Adapter konfiguriert",
+    "descriptions": {
+      "telegram": "Ihr Telegram-Bot — konfiguriert über BotFather",
+      "slack": "Ihre Slack-App — konfiguriert im Slack-Admin-Dashboard"
+    }
+  },
+  "tasks": {
+    "title": "Geplante Aufgaben",
+    "subtitle": "Führen Sie wiederkehrende Claude-Prompts nach Zeitplan aus",
+    "add": "Neue Aufgabe",
+    "save": "Aufgabe speichern",
+    "create": "Aufgabe erstellen",
+    "empty": "Keine geplanten Aufgaben",
+    "addFirst": "Planen Sie Ihre erste wiederkehrende Aufgabe",
+    "noUsers": "Sie benötigen einen Benutzer, bevor Sie Aufgaben planen können",
+    "addFirstUser": "Benutzer hinzufügen",
+    "paused": "Aufgabe pausiert",
+    "resumed": "Aufgabe fortgesetzt",
+    "deleted": "Aufgabe gelöscht",
+    "created": "Aufgabe erstellt",
+    "createFailed": "Aufgabe konnte nicht erstellt werden",
+    "updateFailed": "Aufgabe konnte nicht aktualisiert werden",
+    "deleteFailed": "Aufgabe konnte nicht gelöscht werden",
+    "loadError": "Aufgaben konnten nicht geladen werden",
+    "usersLoadError": "Benutzer für das Aufgabenformular konnten nicht geladen werden",
+    "deleteTitle": "Aufgabe löschen?",
+    "deleteDescription": "Dadurch wird die geplante Aufgabe dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "statusActive": "Aktiv",
+    "statusPaused": "Pausiert",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "fields": {
+      "prompt": "Prompt",
+      "interval": "Intervall",
+      "nextRun": "Nächste Ausführung",
+      "user": "Benutzer",
+      "platform": "Plattform",
+      "status": "Status",
+      "channelRef": "Kanalreferenz",
+      "customSeconds": "Benutzerdefiniert (Sekunden)"
+    },
+    "intervals": {
+      "30s": "Alle 30 Sekunden",
+      "1m": "Jede Minute",
+      "5m": "Alle 5 Minuten",
+      "15m": "Alle 15 Minuten",
+      "30m": "Alle 30 Minuten",
+      "1h": "Stündlich",
+      "6h": "Alle 6 Stunden",
+      "12h": "Alle 12 Stunden",
+      "1d": "Täglich",
+      "custom": "Benutzerdefiniert"
+    },
+    "placeholders": {
+      "prompt": "z. B. Fasse die heutigen Fehlerprotokolle zusammen",
+      "channelRef": "z. B. -1001234567890",
+      "customSeconds": "Sekunden"
+    },
+    "hints": {
+      "selectUser": "Wählen Sie, mit welchen Benutzerberechtigungen die Aufgabe läuft",
+      "channelRef": "Telegram-Chat-ID oder Slack-Kanal-ID — wohin Antworten gesendet werden",
+      "prompt": "Der Prompt, den Claude bei jedem Lauf ausführt"
+    },
+    "validation": {
+      "userRequired": "Wählen Sie einen Benutzer",
+      "channelRefRequired": "Kanalreferenz ist erforderlich",
+      "promptRequired": "Prompt ist erforderlich",
+      "promptTooLong": "Prompt darf höchstens 4000 Zeichen lang sein",
+      "intervalPositive": "Intervall muss eine positive Anzahl Sekunden sein"
+    }
+  },
+  "cost": {
+    "title": "Kostenübersicht",
+    "subtitle": "Verfolgen Sie Token-Verbrauch und Ausgaben pro Benutzer und Tag",
+    "today": "Heute",
+    "week": "Letzte 7 Tage",
+    "month": "Letzte 30 Tage",
+    "total": "Gesamt",
+    "tokensIn": "Token eingehend",
+    "tokensOut": "Token ausgehend",
+    "costUsd": "Kosten (USD)",
+    "dailyCost": "Tägliche Kosten",
+    "perUser": "Pro Benutzer",
+    "exportCsv": "CSV exportieren",
+    "exportFailed": "CSV-Export fehlgeschlagen",
+    "noData": "Noch keine Kostendaten",
+    "summaryLoadError": "Kostenübersicht konnte nicht geladen werden",
+    "dailyLoadError": "Tägliche Kosten konnten nicht geladen werden",
+    "perUserLoadError": "Benutzerkosten konnten nicht geladen werden",
+    "range": {
+      "label": "Zeitraum",
+      "last7": "Letzte 7 Tage",
+      "last14": "Letzte 14 Tage",
+      "last30": "Letzte 30 Tage",
+      "last90": "Letzte 90 Tage"
+    },
+    "fields": {
+      "user": "Benutzer",
+      "day": "Tag"
+    },
+    "sortAscending": "Aufsteigend sortieren",
+    "sortDescending": "Absteigend sortieren"
+  },
+  "audit": {
+    "title": "Audit-Protokoll",
+    "subtitle": "Jede eingehende Nachricht und jeder Claude-Aufruf, nur anhängend",
+    "search": "Nach Korrelations-ID suchen…",
+    "filters": "Filter",
+    "eventType": "Ereignistyp",
+    "allEvents": "Alle Ereignisse",
+    "empty": "Keine Audit-Einträge gefunden",
+    "loadError": "Audit-Protokoll konnte nicht geladen werden",
+    "filterUser": "Benutzer",
+    "filterFrom": "Von",
+    "filterTo": "Bis",
+    "clearFilters": "Filter zurücksetzen",
+    "allUsers": "Alle Benutzer",
+    "fields": {
+      "ts": "Zeitstempel",
+      "correlationId": "Korrelation",
+      "user": "Benutzer",
+      "eventType": "Ereignis",
+      "tool": "Tool",
+      "cost": "Kosten",
+      "duration": "Dauer",
+      "exitCode": "Exit-Code",
+      "command": "Befehl",
+      "error": "Fehler"
+    },
+    "events": {
+      "msg_in": "Nachricht empfangen",
+      "msg_out": "Nachricht gesendet",
+      "auth_fail": "Authentifizierung fehlgeschlagen",
+      "rate_limit": "Ratenbegrenzung",
+      "claude_ok": "Claude-Erfolg",
+      "claude_error": "Claude-Fehler"
+    },
+    "pagination": {
+      "previous": "Zurück",
+      "next": "Weiter"
+    },
+    "showDetails": "Details anzeigen",
+    "hideDetails": "Details ausblenden"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Konfigurieren Sie, wie das Relay ausgeführt wird",
+    "loadError": "Einstellungen konnten nicht geladen werden",
+    "saveFailed": "Einstellungen konnten nicht gespeichert werden",
+    "restartFailed": "Bot konnte nicht neu gestartet werden",
+    "saved": "Einstellungen gespeichert",
+    "unsavedChanges": "Sie haben ungespeicherte Änderungen",
+    "restart": "Bot neu starten",
+    "restarting": "Wird neu gestartet…",
+    "restarted": "Bot erfolgreich neu gestartet",
+    "restartConfirmTitle": "Bot neu starten?",
+    "restartConfirmDescription": "Laufende Anfragen werden abgebrochen, und Benutzer sehen möglicherweise eine kurze Verzögerung, bis der Bot wieder bereit ist.",
+    "restartNow": "Jetzt neu starten",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "Das Claude-Modell und Durchlauflimit für jede Benutzeranfrage"
+      },
+      "scheduler": {
+        "title": "Scheduler",
+        "description": "Hintergrund-Worker, der wiederkehrende Aufgaben ausführt"
+      },
+      "metrics": {
+        "title": "Prometheus-Metriken",
+        "description": "Metrik-Endpunkt für Observability"
+      },
+      "attachments": {
+        "title": "Anhänge",
+        "description": "Von Telegram und Slack weitergeleitete Datei-Uploads"
+      },
+      "logging": {
+        "title": "Protokollierung",
+        "description": "Wie der Bot Logs nach stdout schreibt"
+      }
+    },
+    "fields": {
+      "enabled": "Aktiviert",
+      "claudeModel": "Modell",
+      "maxTurns": "Max. Durchläufe",
+      "pollInterval": "Abfrageintervall (Sekunden)",
+      "maxTasksPerUser": "Max. Aufgaben pro Benutzer",
+      "metricsHost": "Host",
+      "metricsPort": "Port",
+      "maxFileSize": "Max. Dateigröße (Bytes)",
+      "logLevel": "Log-Level",
+      "logJson": "JSON-Ausgabe"
+    },
+    "logLevels": {
+      "DEBUG": "Debug",
+      "INFO": "Info",
+      "WARNING": "Warnung",
+      "ERROR": "Fehler",
+      "CRITICAL": "Kritisch"
+    },
+    "validation": {
+      "modelRequired": "Modell ist erforderlich",
+      "hostRequired": "Host ist erforderlich",
+      "portInvalid": "Port muss zwischen 1 und 65535 liegen",
+      "maxTurnsInvalid": "Max. Durchläufe müssen zwischen 1 und 100 liegen",
+      "pollIntervalInvalid": "Abfrageintervall muss zwischen 1 und 3600 Sekunden liegen",
+      "maxTasksInvalid": "Max. Aufgaben pro Benutzer müssen zwischen 1 und 1000 liegen",
+      "maxFileSizeInvalid": "Max. Dateigröße muss eine positive Ganzzahl sein"
+    }
+  },
+  "login": {
+    "title": "Anmelden",
+    "description": "Geben Sie Ihr Administrator-Passwort ein",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "error": "Ungültiges Passwort",
+    "placeholder": "Administrator-Passwort"
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "loading": "Wird geladen...",
+    "error": "Etwas ist schiefgelaufen",
+    "retry": "Wiederholen",
+    "tryAgain": "Erneut versuchen",
+    "noData": "Keine Daten zum Anzeigen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "actions": "Aktionen",
+    "close": "Schließen",
+    "yes": "Ja",
+    "no": "Nein",
+    "search": "Suchen",
+    "dismiss": "Verwerfen"
+  }
+}

@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "Tableau de bord d'administration"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "adapters": "Adaptateurs",
+    "tasks": "Tâches planifiées",
+    "cost": "Explorateur de coûts",
+    "audit": "Journal d'audit",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Statut en direct, coûts et activité de votre relais",
+    "status": "État du système",
+    "version": "Version",
+    "uptime": "Temps d'activité",
+    "adapters": "Adaptateurs",
+    "scheduler": "Planificateur",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "running": "En cours d'exécution",
+    "stopped": "Arrêté",
+    "costToday": "Coût aujourd'hui",
+    "costWeek": "Coût (7 jours)",
+    "costMonth": "Coût (30 jours)",
+    "recentActivity": "Activité récente",
+    "noActivity": "Aucune activité récente",
+    "loadError": "Échec du chargement des données du tableau de bord",
+    "quickActions": "Actions rapides",
+    "addUser": "Ajouter un utilisateur",
+    "createTask": "Créer une tâche"
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "subtitle": "Gérez les utilisateurs des plateformes, les permissions d'outils et les limites de débit",
+    "add": "Ajouter un utilisateur",
+    "edit": "Modifier l'utilisateur",
+    "delete": "Supprimer l'utilisateur",
+    "save": "Enregistrer l'utilisateur",
+    "create": "Créer un utilisateur",
+    "confirmDelete": "Voulez-vous vraiment supprimer {name} ? Ses tâches planifiées seront désactivées.",
+    "deleteTitle": "Supprimer l'utilisateur ?",
+    "deleteDescription": "Cela désactivera toutes les tâches planifiées de {name}. Cette action est irréversible.",
+    "created": "Utilisateur créé avec succès",
+    "updated": "Utilisateur mis à jour avec succès",
+    "deleted": "Utilisateur supprimé avec succès",
+    "createFailed": "Échec de la création de l'utilisateur",
+    "updateFailed": "Échec de la mise à jour de l'utilisateur",
+    "deleteFailed": "Échec de la suppression de l'utilisateur",
+    "loadError": "Échec du chargement des utilisateurs",
+    "empty": "Aucun utilisateur configuré",
+    "addFirst": "Ajoutez votre premier utilisateur pour commencer",
+    "notFound": "Utilisateur introuvable",
+    "lastActive": "Dernière activité",
+    "never": "Jamais",
+    "fields": {
+      "id": "ID utilisateur",
+      "displayName": "Nom d'affichage",
+      "platform": "Plateforme",
+      "allowedTools": "Outils autorisés",
+      "ratePerMinute": "Requêtes / minute",
+      "ratePerDay": "Requêtes / jour"
+    },
+    "placeholders": {
+      "id": "ex. 123456789",
+      "displayName": "ex. Alice"
+    },
+    "hints": {
+      "id": "ID numérique de la plateforme (le préfixe est ajouté automatiquement)",
+      "allowedTools": "Sélectionnez les outils que cet utilisateur peut invoquer via le relais"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "Lecture",
+      "write": "Écriture",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "L'ID utilisateur est requis",
+      "idNumeric": "L'ID utilisateur doit être numérique",
+      "nameRequired": "Le nom d'affichage est requis",
+      "nameTooLong": "Le nom d'affichage doit contenir au maximum 64 caractères",
+      "ratePositive": "La limite de débit doit être un nombre positif",
+      "toolsRequired": "Au moins un outil doit être sélectionné"
+    }
+  },
+  "adapters": {
+    "title": "Adaptateurs",
+    "subtitle": "Activer ou désactiver les plateformes et renouveler leurs jetons d'API",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "healthy": "Opérationnel",
+    "unhealthy": "Problème",
+    "tokenSet": "Jeton configuré",
+    "tokenMissing": "Jeton manquant",
+    "rotateToken": "Renouveler le jeton",
+    "rotateTokenTitle": "Renouveler le jeton {adapter}",
+    "rotateTokenDescription": "Collez le nouveau jeton du bot. Le bot utilisera le nouveau jeton au prochain redémarrage.",
+    "newToken": "Nouveau jeton",
+    "newTokenPlaceholder": "Collez le nouveau jeton",
+    "updated": "Adaptateur mis à jour",
+    "tokenRotated": "Jeton renouvelé",
+    "loadError": "Échec du chargement des adaptateurs",
+    "updateFailed": "Échec de la mise à jour de l'adaptateur",
+    "rotateFailed": "Échec du renouvellement du jeton",
+    "empty": "Aucun adaptateur configuré",
+    "descriptions": {
+      "telegram": "Votre bot Telegram — configuré via BotFather",
+      "slack": "Votre application Slack — configurée dans le tableau de bord d'administration Slack"
+    }
+  },
+  "tasks": {
+    "title": "Tâches planifiées",
+    "subtitle": "Exécuter des prompts Claude récurrents selon un planning",
+    "add": "Nouvelle tâche",
+    "save": "Enregistrer la tâche",
+    "create": "Créer la tâche",
+    "empty": "Aucune tâche planifiée",
+    "addFirst": "Planifiez votre première tâche récurrente",
+    "noUsers": "Vous devez avoir un utilisateur avant de planifier des tâches",
+    "addFirstUser": "Ajouter un utilisateur",
+    "paused": "Tâche suspendue",
+    "resumed": "Tâche reprise",
+    "deleted": "Tâche supprimée",
+    "created": "Tâche créée",
+    "createFailed": "Échec de la création de la tâche",
+    "updateFailed": "Échec de la mise à jour de la tâche",
+    "deleteFailed": "Échec de la suppression de la tâche",
+    "loadError": "Échec du chargement des tâches",
+    "usersLoadError": "Échec du chargement des utilisateurs pour le formulaire",
+    "deleteTitle": "Supprimer la tâche ?",
+    "deleteDescription": "Cela supprimera définitivement la tâche planifiée. Cette action est irréversible.",
+    "statusActive": "Active",
+    "statusPaused": "Suspendue",
+    "pause": "Suspendre",
+    "resume": "Reprendre",
+    "fields": {
+      "prompt": "Prompt",
+      "interval": "Intervalle",
+      "nextRun": "Prochaine exécution",
+      "user": "Utilisateur",
+      "platform": "Plateforme",
+      "status": "Statut",
+      "channelRef": "Référence du canal",
+      "customSeconds": "Personnalisé (secondes)"
+    },
+    "intervals": {
+      "30s": "Toutes les 30 secondes",
+      "1m": "Chaque minute",
+      "5m": "Toutes les 5 minutes",
+      "15m": "Toutes les 15 minutes",
+      "30m": "Toutes les 30 minutes",
+      "1h": "Toutes les heures",
+      "6h": "Toutes les 6 heures",
+      "12h": "Toutes les 12 heures",
+      "1d": "Chaque jour",
+      "custom": "Personnalisé"
+    },
+    "placeholders": {
+      "prompt": "ex. Résume les logs d'erreur d'aujourd'hui",
+      "channelRef": "ex. -1001234567890",
+      "customSeconds": "Secondes"
+    },
+    "hints": {
+      "selectUser": "Choisissez avec quelles permissions utilisateur cette tâche s'exécute",
+      "channelRef": "ID de chat Telegram ou ID de canal Slack — destination des réponses",
+      "prompt": "Le prompt que Claude exécute à chaque déclenchement"
+    },
+    "validation": {
+      "userRequired": "Sélectionnez un utilisateur",
+      "channelRefRequired": "La référence du canal est requise",
+      "promptRequired": "Le prompt est requis",
+      "promptTooLong": "Le prompt doit contenir au maximum 4000 caractères",
+      "intervalPositive": "L'intervalle doit être un nombre positif de secondes"
+    }
+  },
+  "cost": {
+    "title": "Explorateur de coûts",
+    "subtitle": "Suivi de l'utilisation des jetons et des dépenses par utilisateur et par jour",
+    "today": "Aujourd'hui",
+    "week": "7 derniers jours",
+    "month": "30 derniers jours",
+    "total": "Total",
+    "tokensIn": "Jetons entrants",
+    "tokensOut": "Jetons sortants",
+    "costUsd": "Coût (USD)",
+    "dailyCost": "Coût quotidien",
+    "perUser": "Par utilisateur",
+    "exportCsv": "Exporter CSV",
+    "exportFailed": "Échec de l'export CSV",
+    "noData": "Aucune donnée de coût",
+    "summaryLoadError": "Échec du chargement du résumé des coûts",
+    "dailyLoadError": "Échec du chargement des coûts quotidiens",
+    "perUserLoadError": "Échec du chargement des coûts par utilisateur",
+    "range": {
+      "label": "Plage",
+      "last7": "7 derniers jours",
+      "last14": "14 derniers jours",
+      "last30": "30 derniers jours",
+      "last90": "90 derniers jours"
+    },
+    "fields": {
+      "user": "Utilisateur",
+      "day": "Jour"
+    },
+    "sortAscending": "Trier par ordre croissant",
+    "sortDescending": "Trier par ordre décroissant"
+  },
+  "audit": {
+    "title": "Journal d'audit",
+    "subtitle": "Chaque message entrant et chaque appel à Claude, en ajout seulement",
+    "search": "Rechercher par ID de corrélation…",
+    "filters": "Filtres",
+    "eventType": "Type d'événement",
+    "allEvents": "Tous les événements",
+    "empty": "Aucune entrée d'audit trouvée",
+    "loadError": "Échec du chargement du journal d'audit",
+    "filterUser": "Utilisateur",
+    "filterFrom": "De",
+    "filterTo": "À",
+    "clearFilters": "Réinitialiser les filtres",
+    "allUsers": "Tous les utilisateurs",
+    "fields": {
+      "ts": "Horodatage",
+      "correlationId": "Corrélation",
+      "user": "Utilisateur",
+      "eventType": "Événement",
+      "tool": "Outil",
+      "cost": "Coût",
+      "duration": "Durée",
+      "exitCode": "Code de sortie",
+      "command": "Commande",
+      "error": "Erreur"
+    },
+    "events": {
+      "msg_in": "Message reçu",
+      "msg_out": "Message envoyé",
+      "auth_fail": "Échec d'authentification",
+      "rate_limit": "Limite de débit",
+      "claude_ok": "Succès Claude",
+      "claude_error": "Erreur Claude"
+    },
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant"
+    },
+    "showDetails": "Afficher les détails",
+    "hideDetails": "Masquer les détails"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Configurez le fonctionnement du relais",
+    "loadError": "Échec du chargement des paramètres",
+    "saveFailed": "Échec de l'enregistrement des paramètres",
+    "restartFailed": "Échec du redémarrage du bot",
+    "saved": "Paramètres enregistrés",
+    "unsavedChanges": "Vous avez des modifications non enregistrées",
+    "restart": "Redémarrer le bot",
+    "restarting": "Redémarrage…",
+    "restarted": "Bot redémarré avec succès",
+    "restartConfirmTitle": "Redémarrer le bot ?",
+    "restartConfirmDescription": "Les requêtes en cours seront annulées et les utilisateurs pourraient constater un court délai avant que le bot ne soit à nouveau prêt.",
+    "restartNow": "Redémarrer maintenant",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "Le modèle Claude et la limite de tours utilisés pour chaque requête utilisateur"
+      },
+      "scheduler": {
+        "title": "Planificateur",
+        "description": "Processus d'arrière-plan qui exécute les tâches récurrentes"
+      },
+      "metrics": {
+        "title": "Métriques Prometheus",
+        "description": "Endpoint de métriques pour l'observabilité"
+      },
+      "attachments": {
+        "title": "Pièces jointes",
+        "description": "Envois de fichiers transférés depuis Telegram et Slack"
+      },
+      "logging": {
+        "title": "Journalisation",
+        "description": "Comment le bot écrit ses logs sur stdout"
+      }
+    },
+    "fields": {
+      "enabled": "Activé",
+      "claudeModel": "Modèle",
+      "maxTurns": "Tours max.",
+      "pollInterval": "Intervalle de sondage (secondes)",
+      "maxTasksPerUser": "Tâches max. par utilisateur",
+      "metricsHost": "Hôte",
+      "metricsPort": "Port",
+      "maxFileSize": "Taille max. du fichier (octets)",
+      "logLevel": "Niveau de journal",
+      "logJson": "Sortie JSON"
+    },
+    "logLevels": {
+      "DEBUG": "Debug",
+      "INFO": "Info",
+      "WARNING": "Avertissement",
+      "ERROR": "Erreur",
+      "CRITICAL": "Critique"
+    },
+    "validation": {
+      "modelRequired": "Le modèle est requis",
+      "hostRequired": "L'hôte est requis",
+      "portInvalid": "Le port doit être compris entre 1 et 65535",
+      "maxTurnsInvalid": "Le nombre max. de tours doit être compris entre 1 et 100",
+      "pollIntervalInvalid": "L'intervalle de sondage doit être compris entre 1 et 3600 secondes",
+      "maxTasksInvalid": "Le nombre max. de tâches par utilisateur doit être compris entre 1 et 1000",
+      "maxFileSizeInvalid": "La taille max. du fichier doit être un entier positif"
+    }
+  },
+  "login": {
+    "title": "Connexion",
+    "description": "Entrez votre mot de passe administrateur",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "error": "Mot de passe invalide",
+    "placeholder": "Mot de passe administrateur"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer",
+    "tryAgain": "Réessayer",
+    "noData": "Aucune donnée à afficher",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "actions": "Actions",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "search": "Rechercher",
+    "dismiss": "Ignorer"
+  }
+}

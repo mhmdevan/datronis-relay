@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/*
+ * Radix Themes ships its own CSS — we import it from the layout.
+ * Tailwind handles layout utilities (flex, grid, padding, margin,
+ * responsive breakpoints). Radix handles component styling.
+ *
+ * Logical properties (ps-, pe-, ms-, me-) are used everywhere
+ * instead of pl/pr/ml/mr so RTL flipping is automatic.
+ */
+
+/* Smooth theme transitions */
+:root {
+  color-scheme: light dark;
+}
+
+/* Prevent layout shift on scrollbar appearance */
+html {
+  overflow-y: scroll;
+}
+
+/* Sidebar transition */
+.sidebar-transition {
+  transition: width 200ms ease, transform 200ms ease;
+}

@@ -40,3 +40,5 @@ datronis-relay-roadmap.md
 .idea/
 *.swp
 .DS_Store
+/ui/.next
+/ui/node_modules

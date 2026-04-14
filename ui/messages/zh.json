@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "管理仪表板"
+  },
+  "nav": {
+    "dashboard": "仪表板",
+    "users": "用户",
+    "adapters": "适配器",
+    "tasks": "计划任务",
+    "cost": "成本浏览",
+    "audit": "审计日志",
+    "settings": "设置",
+    "logout": "退出登录"
+  },
+  "dashboard": {
+    "title": "仪表板",
+    "subtitle": "实时查看您的中继状态、成本与活动",
+    "status": "系统状态",
+    "version": "版本",
+    "uptime": "运行时间",
+    "adapters": "适配器",
+    "scheduler": "调度器",
+    "active": "活动",
+    "inactive": "未激活",
+    "running": "运行中",
+    "stopped": "已停止",
+    "costToday": "今日成本",
+    "costWeek": "近 7 天成本",
+    "costMonth": "近 30 天成本",
+    "recentActivity": "最近活动",
+    "noActivity": "暂无最近活动",
+    "loadError": "加载仪表板数据失败",
+    "quickActions": "快捷操作",
+    "addUser": "添加用户",
+    "createTask": "创建任务"
+  },
+  "users": {
+    "title": "用户",
+    "subtitle": "管理平台用户、工具权限和速率限制",
+    "add": "添加用户",
+    "edit": "编辑用户",
+    "delete": "删除用户",
+    "save": "保存用户",
+    "create": "创建用户",
+    "confirmDelete": "确定要删除 {name} 吗?其计划任务将被停用。",
+    "deleteTitle": "删除用户?",
+    "deleteDescription": "此操作将停用 {name} 的所有计划任务,且无法撤销。",
+    "created": "用户创建成功",
+    "updated": "用户更新成功",
+    "deleted": "用户删除成功",
+    "createFailed": "创建用户失败",
+    "updateFailed": "更新用户失败",
+    "deleteFailed": "删除用户失败",
+    "loadError": "加载用户列表失败",
+    "empty": "尚未配置任何用户",
+    "addFirst": "添加您的第一个用户以开始使用",
+    "notFound": "未找到用户",
+    "lastActive": "最近活跃",
+    "never": "从未",
+    "fields": {
+      "id": "用户 ID",
+      "displayName": "显示名称",
+      "platform": "平台",
+      "allowedTools": "允许的工具",
+      "ratePerMinute": "请求 / 分钟",
+      "ratePerDay": "请求 / 天"
+    },
+    "placeholders": {
+      "id": "例如 123456789",
+      "displayName": "例如 Alice"
+    },
+    "hints": {
+      "id": "来自平台的数字 ID(系统会自动添加前缀)",
+      "allowedTools": "选择此用户可通过中继调用的工具"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "读取",
+      "write": "写入",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "用户 ID 必填",
+      "idNumeric": "用户 ID 必须为数字",
+      "nameRequired": "显示名称必填",
+      "nameTooLong": "显示名称不得超过 64 个字符",
+      "ratePositive": "速率限制必须为正数",
+      "toolsRequired": "至少需要选择一个工具"
+    }
+  },
+  "adapters": {
+    "title": "适配器",
+    "subtitle": "启用或禁用平台,并轮换其 API 令牌",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "启用",
+    "disable": "禁用",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "healthy": "正常",
+    "unhealthy": "异常",
+    "tokenSet": "令牌已配置",
+    "tokenMissing": "令牌缺失",
+    "rotateToken": "轮换令牌",
+    "rotateTokenTitle": "轮换 {adapter} 令牌",
+    "rotateTokenDescription": "粘贴新的机器人令牌。机器人将在下次重启时使用新令牌。",
+    "newToken": "新令牌",
+    "newTokenPlaceholder": "粘贴新令牌",
+    "updated": "适配器已更新",
+    "tokenRotated": "令牌已轮换",
+    "loadError": "加载适配器失败",
+    "updateFailed": "更新适配器失败",
+    "rotateFailed": "轮换令牌失败",
+    "empty": "未配置任何适配器",
+    "descriptions": {
+      "telegram": "您的 Telegram 机器人 — 通过 BotFather 配置",
+      "slack": "您的 Slack 应用 — 在 Slack 管理后台配置"
+    }
+  },
+  "tasks": {
+    "title": "计划任务",
+    "subtitle": "按计划定时运行 Claude 提示词",
+    "add": "新建任务",
+    "save": "保存任务",
+    "create": "创建任务",
+    "empty": "暂无计划任务",
+    "addFirst": "创建您的第一个周期性任务",
+    "noUsers": "您需要先添加用户才能创建计划任务",
+    "addFirstUser": "添加用户",
+    "paused": "任务已暂停",
+    "resumed": "任务已恢复",
+    "deleted": "任务已删除",
+    "created": "任务已创建",
+    "createFailed": "创建任务失败",
+    "updateFailed": "更新任务失败",
+    "deleteFailed": "删除任务失败",
+    "loadError": "加载任务列表失败",
+    "usersLoadError": "加载用户列表失败,无法填充任务表单",
+    "deleteTitle": "删除任务?",
+    "deleteDescription": "此操作将永久删除该计划任务,且无法撤销。",
+    "statusActive": "活动",
+    "statusPaused": "已暂停",
+    "pause": "暂停",
+    "resume": "恢复",
+    "fields": {
+      "prompt": "提示词",
+      "interval": "间隔",
+      "nextRun": "下次运行",
+      "user": "用户",
+      "platform": "平台",
+      "status": "状态",
+      "channelRef": "频道引用",
+      "customSeconds": "自定义(秒)"
+    },
+    "intervals": {
+      "30s": "每 30 秒",
+      "1m": "每分钟",
+      "5m": "每 5 分钟",
+      "15m": "每 15 分钟",
+      "30m": "每 30 分钟",
+      "1h": "每小时",
+      "6h": "每 6 小时",
+      "12h": "每 12 小时",
+      "1d": "每天",
+      "custom": "自定义"
+    },
+    "placeholders": {
+      "prompt": "例如:总结今天的错误日志",
+      "channelRef": "例如 -1001234567890",
+      "customSeconds": "秒"
+    },
+    "hints": {
+      "selectUser": "选择此任务以哪个用户的权限运行",
+      "channelRef": "Telegram 聊天 ID 或 Slack 频道 ID — 回复将发送至此",
+      "prompt": "每次任务触发时 Claude 将运行的提示词"
+    },
+    "validation": {
+      "userRequired": "请选择用户",
+      "channelRefRequired": "频道引用必填",
+      "promptRequired": "提示词必填",
+      "promptTooLong": "提示词不得超过 4000 个字符",
+      "intervalPositive": "间隔必须为正整数秒"
+    }
+  },
+  "cost": {
+    "title": "成本浏览",
+    "subtitle": "按用户和日期追踪令牌用量与花费",
+    "today": "今天",
+    "week": "最近 7 天",
+    "month": "最近 30 天",
+    "total": "全部",
+    "tokensIn": "输入令牌",
+    "tokensOut": "输出令牌",
+    "costUsd": "成本(美元)",
+    "dailyCost": "每日成本",
+    "perUser": "按用户",
+    "exportCsv": "导出 CSV",
+    "exportFailed": "导出 CSV 失败",
+    "noData": "暂无成本数据",
+    "summaryLoadError": "加载成本汇总失败",
+    "dailyLoadError": "加载每日成本失败",
+    "perUserLoadError": "加载用户成本失败",
+    "range": {
+      "label": "时间范围",
+      "last7": "最近 7 天",
+      "last14": "最近 14 天",
+      "last30": "最近 30 天",
+      "last90": "最近 90 天"
+    },
+    "fields": {
+      "user": "用户",
+      "day": "日期"
+    },
+    "sortAscending": "升序排序",
+    "sortDescending": "降序排序"
+  },
+  "audit": {
+    "title": "审计日志",
+    "subtitle": "每条入站消息与每次 Claude 调用,仅追加",
+    "search": "按关联 ID 搜索…",
+    "filters": "筛选",
+    "eventType": "事件类型",
+    "allEvents": "所有事件",
+    "empty": "未找到审计条目",
+    "loadError": "加载审计日志失败",
+    "filterUser": "用户",
+    "filterFrom": "起始",
+    "filterTo": "结束",
+    "clearFilters": "清除筛选",
+    "allUsers": "所有用户",
+    "fields": {
+      "ts": "时间戳",
+      "correlationId": "关联 ID",
+      "user": "用户",
+      "eventType": "事件",
+      "tool": "工具",
+      "cost": "成本",
+      "duration": "耗时",
+      "exitCode": "退出码",
+      "command": "命令",
+      "error": "错误"
+    },
+    "events": {
+      "msg_in": "收到消息",
+      "msg_out": "发送消息",
+      "auth_fail": "认证失败",
+      "rate_limit": "速率限制",
+      "claude_ok": "Claude 成功",
+      "claude_error": "Claude 错误"
+    },
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "showDetails": "显示详情",
+    "hideDetails": "隐藏详情"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "配置中继的运行方式",
+    "loadError": "加载设置失败",
+    "saveFailed": "保存设置失败",
+    "restartFailed": "重启机器人失败",
+    "saved": "设置已保存",
+    "unsavedChanges": "您有未保存的更改",
+    "restart": "重启机器人",
+    "restarting": "正在重启…",
+    "restarted": "机器人已成功重启",
+    "restartConfirmTitle": "重启机器人?",
+    "restartConfirmDescription": "正在处理的请求将被取消,用户可能会在机器人重新就绪前看到短暂的延迟。",
+    "restartNow": "立即重启",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "每个用户请求使用的 Claude 模型与最大轮次"
+      },
+      "scheduler": {
+        "title": "调度器",
+        "description": "运行周期任务的后台工作进程"
+      },
+      "metrics": {
+        "title": "Prometheus 指标",
+        "description": "用于可观测性的指标端点"
+      },
+      "attachments": {
+        "title": "附件",
+        "description": "从 Telegram 和 Slack 转发的文件上传"
+      },
+      "logging": {
+        "title": "日志",
+        "description": "机器人如何将日志写入 stdout"
+      }
+    },
+    "fields": {
+      "enabled": "启用",
+      "claudeModel": "模型",
+      "maxTurns": "最大轮次",
+      "pollInterval": "轮询间隔(秒)",
+      "maxTasksPerUser": "每用户最大任务数",
+      "metricsHost": "主机",
+      "metricsPort": "端口",
+      "maxFileSize": "最大文件大小(字节)",
+      "logLevel": "日志级别",
+      "logJson": "JSON 输出"
+    },
+    "logLevels": {
+      "DEBUG": "调试",
+      "INFO": "信息",
+      "WARNING": "警告",
+      "ERROR": "错误",
+      "CRITICAL": "严重"
+    },
+    "validation": {
+      "modelRequired": "模型必填",
+      "hostRequired": "主机必填",
+      "portInvalid": "端口必须在 1 到 65535 之间",
+      "maxTurnsInvalid": "最大轮次必须在 1 到 100 之间",
+      "pollIntervalInvalid": "轮询间隔必须在 1 到 3600 秒之间",
+      "maxTasksInvalid": "每用户最大任务数必须在 1 到 1000 之间",
+      "maxFileSizeInvalid": "最大文件大小必须为正整数"
+    }
+  },
+  "login": {
+    "title": "登录",
+    "description": "请输入管理员密码以访问仪表板",
+    "password": "密码",
+    "submit": "登录",
+    "error": "密码无效",
+    "placeholder": "管理员密码"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "enable": "启用",
+    "disable": "禁用",
+    "loading": "加载中…",
+    "error": "出错了",
+    "retry": "重试",
+    "tryAgain": "再试一次",
+    "noData": "无数据可显示",
+    "confirm": "确认",
+    "back": "返回",
+    "actions": "操作",
+    "close": "关闭",
+    "yes": "是",
+    "no": "否",
+    "search": "搜索",
+    "dismiss": "忽略"
+  }
+}

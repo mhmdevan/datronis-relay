@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "Management Dashboard"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "adapters": "Adapters",
+    "tasks": "Scheduled Tasks",
+    "cost": "Cost Explorer",
+    "audit": "Audit Log",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Live status, cost, and activity for your relay",
+    "status": "System Status",
+    "version": "Version",
+    "uptime": "Uptime",
+    "adapters": "Adapters",
+    "scheduler": "Scheduler",
+    "active": "Active",
+    "inactive": "Inactive",
+    "running": "Running",
+    "stopped": "Stopped",
+    "costToday": "Cost Today",
+    "costWeek": "Cost (7 Days)",
+    "costMonth": "Cost (30 Days)",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity",
+    "loadError": "Failed to load dashboard data",
+    "quickActions": "Quick Actions",
+    "addUser": "Add User",
+    "createTask": "Create Task"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage platform users, tool permissions, and rate limits",
+    "add": "Add User",
+    "edit": "Edit User",
+    "delete": "Delete User",
+    "save": "Save User",
+    "create": "Create User",
+    "confirmDelete": "Are you sure you want to delete {name}? Their scheduled tasks will be deactivated.",
+    "deleteTitle": "Delete user?",
+    "deleteDescription": "This will deactivate all of {name}'s scheduled tasks. This action cannot be undone.",
+    "created": "User created successfully",
+    "updated": "User updated successfully",
+    "deleted": "User deleted successfully",
+    "createFailed": "Failed to create user",
+    "updateFailed": "Failed to update user",
+    "deleteFailed": "Failed to delete user",
+    "loadError": "Failed to load users",
+    "empty": "No users configured yet",
+    "addFirst": "Add your first user to get started",
+    "notFound": "User not found",
+    "lastActive": "Last active",
+    "never": "Never",
+    "fields": {
+      "id": "User ID",
+      "displayName": "Display Name",
+      "platform": "Platform",
+      "allowedTools": "Allowed Tools",
+      "ratePerMinute": "Requests / minute",
+      "ratePerDay": "Requests / day"
+    },
+    "placeholders": {
+      "id": "e.g., 123456789",
+      "displayName": "e.g., Alice"
+    },
+    "hints": {
+      "id": "Numeric ID from the platform (prefix is added automatically)",
+      "allowedTools": "Select which tools this user can invoke via the relay"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "Read",
+      "write": "Write",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "User ID is required",
+      "idNumeric": "User ID must be numeric",
+      "nameRequired": "Display name is required",
+      "nameTooLong": "Display name must be 64 characters or fewer",
+      "ratePositive": "Rate limit must be a positive number",
+      "toolsRequired": "At least one tool must be selected"
+    }
+  },
+  "adapters": {
+    "title": "Adapters",
+    "subtitle": "Enable or disable platforms and rotate their API tokens",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "Enable",
+    "disable": "Disable",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "tokenSet": "Token configured",
+    "tokenMissing": "Token missing",
+    "rotateToken": "Rotate token",
+    "rotateTokenTitle": "Rotate {adapter} token",
+    "rotateTokenDescription": "Paste the new bot token. The bot picks up the new token on the next restart.",
+    "newToken": "New token",
+    "newTokenPlaceholder": "Paste the new token",
+    "updated": "Adapter updated",
+    "tokenRotated": "Token rotated",
+    "loadError": "Failed to load adapters",
+    "updateFailed": "Failed to update adapter",
+    "rotateFailed": "Failed to rotate token",
+    "empty": "No adapters configured",
+    "descriptions": {
+      "telegram": "Your Telegram bot — configured via BotFather",
+      "slack": "Your Slack app — configured in the Slack admin dashboard"
+    }
+  },
+  "tasks": {
+    "title": "Scheduled Tasks",
+    "subtitle": "Run recurring Claude prompts on a schedule",
+    "add": "New Task",
+    "save": "Save Task",
+    "create": "Create Task",
+    "empty": "No scheduled tasks",
+    "addFirst": "Schedule your first recurring task",
+    "noUsers": "You need a user before you can schedule tasks",
+    "addFirstUser": "Add a user",
+    "paused": "Task paused",
+    "resumed": "Task resumed",
+    "deleted": "Task deleted",
+    "created": "Task created",
+    "createFailed": "Failed to create task",
+    "updateFailed": "Failed to update task",
+    "deleteFailed": "Failed to delete task",
+    "loadError": "Failed to load tasks",
+    "usersLoadError": "Failed to load users for the task form",
+    "deleteTitle": "Delete task?",
+    "deleteDescription": "This will permanently delete the scheduled task. This action cannot be undone.",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume",
+    "fields": {
+      "prompt": "Prompt",
+      "interval": "Interval",
+      "nextRun": "Next run",
+      "user": "User",
+      "platform": "Platform",
+      "status": "Status",
+      "channelRef": "Channel reference",
+      "customSeconds": "Custom (seconds)"
+    },
+    "intervals": {
+      "30s": "Every 30 seconds",
+      "1m": "Every minute",
+      "5m": "Every 5 minutes",
+      "15m": "Every 15 minutes",
+      "30m": "Every 30 minutes",
+      "1h": "Hourly",
+      "6h": "Every 6 hours",
+      "12h": "Every 12 hours",
+      "1d": "Daily",
+      "custom": "Custom"
+    },
+    "placeholders": {
+      "prompt": "e.g. Summarize today's error logs",
+      "channelRef": "e.g. -1001234567890",
+      "customSeconds": "Seconds"
+    },
+    "hints": {
+      "selectUser": "Pick which user's permissions this task runs with",
+      "channelRef": "Telegram chat id or Slack channel id — where replies will be sent",
+      "prompt": "The prompt Claude runs each time the task fires"
+    },
+    "validation": {
+      "userRequired": "Select a user",
+      "channelRefRequired": "Channel reference is required",
+      "promptRequired": "Prompt is required",
+      "promptTooLong": "Prompt must be 4000 characters or fewer",
+      "intervalPositive": "Interval must be a positive number of seconds"
+    }
+  },
+  "cost": {
+    "title": "Cost Explorer",
+    "subtitle": "Track token usage and spend per user and per day",
+    "today": "Today",
+    "week": "Last 7 Days",
+    "month": "Last 30 Days",
+    "total": "All Time",
+    "tokensIn": "Tokens In",
+    "tokensOut": "Tokens Out",
+    "costUsd": "Cost (USD)",
+    "dailyCost": "Daily Cost",
+    "perUser": "Per User",
+    "exportCsv": "Export CSV",
+    "exportFailed": "Failed to export CSV",
+    "noData": "No cost data yet",
+    "summaryLoadError": "Failed to load cost summary",
+    "dailyLoadError": "Failed to load daily costs",
+    "perUserLoadError": "Failed to load per-user costs",
+    "range": {
+      "label": "Range",
+      "last7": "Last 7 days",
+      "last14": "Last 14 days",
+      "last30": "Last 30 days",
+      "last90": "Last 90 days"
+    },
+    "fields": {
+      "user": "User",
+      "day": "Day"
+    },
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "Every inbound message and every Claude call, append-only",
+    "search": "Search by correlation ID…",
+    "filters": "Filters",
+    "eventType": "Event Type",
+    "allEvents": "All Events",
+    "empty": "No audit entries found",
+    "loadError": "Failed to load audit log",
+    "filterUser": "User",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "clearFilters": "Clear filters",
+    "allUsers": "All users",
+    "fields": {
+      "ts": "Timestamp",
+      "correlationId": "Correlation",
+      "user": "User",
+      "eventType": "Event",
+      "tool": "Tool",
+      "cost": "Cost",
+      "duration": "Duration",
+      "exitCode": "Exit code",
+      "command": "Command",
+      "error": "Error"
+    },
+    "events": {
+      "msg_in": "Message received",
+      "msg_out": "Message sent",
+      "auth_fail": "Auth failed",
+      "rate_limit": "Rate limited",
+      "claude_ok": "Claude success",
+      "claude_error": "Claude error"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure how the relay runs",
+    "loadError": "Failed to load settings",
+    "saveFailed": "Failed to save settings",
+    "restartFailed": "Failed to restart bot",
+    "saved": "Settings saved",
+    "unsavedChanges": "You have unsaved changes",
+    "restart": "Restart Bot",
+    "restarting": "Restarting…",
+    "restarted": "Bot restarted successfully",
+    "restartConfirmTitle": "Restart the bot?",
+    "restartConfirmDescription": "In-flight requests will be cancelled and users may see a momentary delay before the bot is ready again.",
+    "restartNow": "Restart now",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "The Claude model and turn limit used for every user request"
+      },
+      "scheduler": {
+        "title": "Scheduler",
+        "description": "Background worker that runs recurring tasks"
+      },
+      "metrics": {
+        "title": "Prometheus Metrics",
+        "description": "Metrics endpoint for observability"
+      },
+      "attachments": {
+        "title": "Attachments",
+        "description": "File uploads forwarded from Telegram and Slack"
+      },
+      "logging": {
+        "title": "Logging",
+        "description": "How the bot writes logs to stdout"
+      }
+    },
+    "fields": {
+      "enabled": "Enabled",
+      "claudeModel": "Model",
+      "maxTurns": "Max turns",
+      "pollInterval": "Poll interval (seconds)",
+      "maxTasksPerUser": "Max tasks per user",
+      "metricsHost": "Host",
+      "metricsPort": "Port",
+      "maxFileSize": "Max file size (bytes)",
+      "logLevel": "Log level",
+      "logJson": "JSON output"
+    },
+    "logLevels": {
+      "DEBUG": "Debug",
+      "INFO": "Info",
+      "WARNING": "Warning",
+      "ERROR": "Error",
+      "CRITICAL": "Critical"
+    },
+    "validation": {
+      "modelRequired": "Model is required",
+      "hostRequired": "Host is required",
+      "portInvalid": "Port must be between 1 and 65535",
+      "maxTurnsInvalid": "Max turns must be between 1 and 100",
+      "pollIntervalInvalid": "Poll interval must be between 1 and 3600 seconds",
+      "maxTasksInvalid": "Max tasks per user must be between 1 and 1000",
+      "maxFileSizeInvalid": "Max file size must be a positive integer"
+    }
+  },
+  "login": {
+    "title": "Sign In",
+    "description": "Enter your admin password to access the dashboard",
+    "password": "Password",
+    "submit": "Sign In",
+    "error": "Invalid password",
+    "placeholder": "Admin password"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "enable": "Enable",
+    "disable": "Disable",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "tryAgain": "Try Again",
+    "noData": "No data to display",
+    "confirm": "Confirm",
+    "back": "Back",
+    "actions": "Actions",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "dismiss": "Dismiss"
+  }
+}

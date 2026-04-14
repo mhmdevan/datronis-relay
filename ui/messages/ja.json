@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "管理ダッシュボード"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "users": "ユーザー",
+    "adapters": "アダプター",
+    "tasks": "スケジュールタスク",
+    "cost": "コストエクスプローラー",
+    "audit": "監査ログ",
+    "settings": "設定",
+    "logout": "ログアウト"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "subtitle": "リレーのリアルタイムステータス、コスト、アクティビティ",
+    "status": "システム状態",
+    "version": "バージョン",
+    "uptime": "稼働時間",
+    "adapters": "アダプター",
+    "scheduler": "スケジューラー",
+    "active": "アクティブ",
+    "inactive": "非アクティブ",
+    "running": "実行中",
+    "stopped": "停止中",
+    "costToday": "本日のコスト",
+    "costWeek": "過去 7 日間のコスト",
+    "costMonth": "過去 30 日間のコスト",
+    "recentActivity": "最近のアクティビティ",
+    "noActivity": "最近のアクティビティはありません",
+    "loadError": "ダッシュボードデータの読み込みに失敗しました",
+    "quickActions": "クイックアクション",
+    "addUser": "ユーザーを追加",
+    "createTask": "タスクを作成"
+  },
+  "users": {
+    "title": "ユーザー",
+    "subtitle": "プラットフォームユーザー、ツール権限、レート制限を管理",
+    "add": "ユーザーを追加",
+    "edit": "ユーザーを編集",
+    "delete": "ユーザーを削除",
+    "save": "ユーザーを保存",
+    "create": "ユーザーを作成",
+    "confirmDelete": "{name} を本当に削除しますか?スケジュールタスクは無効化されます。",
+    "deleteTitle": "ユーザーを削除しますか?",
+    "deleteDescription": "{name} のすべてのスケジュールタスクが無効化されます。この操作は取り消せません。",
+    "created": "ユーザーを作成しました",
+    "updated": "ユーザーを更新しました",
+    "deleted": "ユーザーを削除しました",
+    "createFailed": "ユーザーの作成に失敗しました",
+    "updateFailed": "ユーザーの更新に失敗しました",
+    "deleteFailed": "ユーザーの削除に失敗しました",
+    "loadError": "ユーザーの読み込みに失敗しました",
+    "empty": "ユーザーがまだ登録されていません",
+    "addFirst": "最初のユーザーを追加してください",
+    "notFound": "ユーザーが見つかりません",
+    "lastActive": "最終アクティブ",
+    "never": "なし",
+    "fields": {
+      "id": "ユーザー ID",
+      "displayName": "表示名",
+      "platform": "プラットフォーム",
+      "allowedTools": "許可されたツール",
+      "ratePerMinute": "リクエスト / 分",
+      "ratePerDay": "リクエスト / 日"
+    },
+    "placeholders": {
+      "id": "例: 123456789",
+      "displayName": "例: Alice"
+    },
+    "hints": {
+      "id": "プラットフォームの数値 ID(プレフィックスは自動的に追加されます)",
+      "allowedTools": "このユーザーがリレー経由で呼び出せるツールを選択してください"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "読み取り",
+      "write": "書き込み",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "ユーザー ID は必須です",
+      "idNumeric": "ユーザー ID は数値である必要があります",
+      "nameRequired": "表示名は必須です",
+      "nameTooLong": "表示名は 64 文字以内である必要があります",
+      "ratePositive": "レート制限は正の数である必要があります",
+      "toolsRequired": "少なくとも 1 つのツールを選択してください"
+    }
+  },
+  "adapters": {
+    "title": "アダプター",
+    "subtitle": "プラットフォームを有効化/無効化し、API トークンを更新します",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "有効化",
+    "disable": "無効化",
+    "enabled": "有効",
+    "disabled": "無効",
+    "healthy": "正常",
+    "unhealthy": "異常",
+    "tokenSet": "トークン設定済み",
+    "tokenMissing": "トークン未設定",
+    "rotateToken": "トークンを更新",
+    "rotateTokenTitle": "{adapter} のトークンを更新",
+    "rotateTokenDescription": "新しいボットトークンを貼り付けてください。次回の再起動時にボットが新しいトークンを使用します。",
+    "newToken": "新しいトークン",
+    "newTokenPlaceholder": "新しいトークンを貼り付け",
+    "updated": "アダプターを更新しました",
+    "tokenRotated": "トークンを更新しました",
+    "loadError": "アダプターの読み込みに失敗しました",
+    "updateFailed": "アダプターの更新に失敗しました",
+    "rotateFailed": "トークンの更新に失敗しました",
+    "empty": "アダプターが設定されていません",
+    "descriptions": {
+      "telegram": "あなたの Telegram ボット — BotFather で設定",
+      "slack": "あなたの Slack アプリ — Slack 管理ダッシュボードで設定"
+    }
+  },
+  "tasks": {
+    "title": "スケジュールタスク",
+    "subtitle": "Claude のプロンプトを定期的に実行します",
+    "add": "新規タスク",
+    "save": "タスクを保存",
+    "create": "タスクを作成",
+    "empty": "スケジュールタスクはありません",
+    "addFirst": "最初の定期タスクをスケジュールしてください",
+    "noUsers": "タスクをスケジュールするにはユーザーが必要です",
+    "addFirstUser": "ユーザーを追加",
+    "paused": "タスクを一時停止しました",
+    "resumed": "タスクを再開しました",
+    "deleted": "タスクを削除しました",
+    "created": "タスクを作成しました",
+    "createFailed": "タスクの作成に失敗しました",
+    "updateFailed": "タスクの更新に失敗しました",
+    "deleteFailed": "タスクの削除に失敗しました",
+    "loadError": "タスクの読み込みに失敗しました",
+    "usersLoadError": "タスクフォーム用のユーザー読み込みに失敗しました",
+    "deleteTitle": "タスクを削除しますか?",
+    "deleteDescription": "スケジュールタスクを完全に削除します。この操作は取り消せません。",
+    "statusActive": "アクティブ",
+    "statusPaused": "一時停止中",
+    "pause": "一時停止",
+    "resume": "再開",
+    "fields": {
+      "prompt": "プロンプト",
+      "interval": "間隔",
+      "nextRun": "次回実行",
+      "user": "ユーザー",
+      "platform": "プラットフォーム",
+      "status": "ステータス",
+      "channelRef": "チャネル参照",
+      "customSeconds": "カスタム(秒)"
+    },
+    "intervals": {
+      "30s": "30 秒ごと",
+      "1m": "1 分ごと",
+      "5m": "5 分ごと",
+      "15m": "15 分ごと",
+      "30m": "30 分ごと",
+      "1h": "1 時間ごと",
+      "6h": "6 時間ごと",
+      "12h": "12 時間ごと",
+      "1d": "1 日ごと",
+      "custom": "カスタム"
+    },
+    "placeholders": {
+      "prompt": "例: 本日のエラーログを要約して",
+      "channelRef": "例: -1001234567890",
+      "customSeconds": "秒"
+    },
+    "hints": {
+      "selectUser": "このタスクをどのユーザーの権限で実行するか選択してください",
+      "channelRef": "Telegram のチャット ID または Slack のチャネル ID — 返信の送信先",
+      "prompt": "タスク実行時に Claude が実行するプロンプト"
+    },
+    "validation": {
+      "userRequired": "ユーザーを選択してください",
+      "channelRefRequired": "チャネル参照は必須です",
+      "promptRequired": "プロンプトは必須です",
+      "promptTooLong": "プロンプトは 4000 文字以内である必要があります",
+      "intervalPositive": "間隔は正の秒数である必要があります"
+    }
+  },
+  "cost": {
+    "title": "コストエクスプローラー",
+    "subtitle": "ユーザー別・日付別にトークン使用量と費用を追跡",
+    "today": "今日",
+    "week": "過去 7 日間",
+    "month": "過去 30 日間",
+    "total": "累計",
+    "tokensIn": "入力トークン",
+    "tokensOut": "出力トークン",
+    "costUsd": "コスト(USD)",
+    "dailyCost": "日次コスト",
+    "perUser": "ユーザー別",
+    "exportCsv": "CSV をエクスポート",
+    "exportFailed": "CSV のエクスポートに失敗しました",
+    "noData": "コストデータがまだありません",
+    "summaryLoadError": "コストサマリーの読み込みに失敗しました",
+    "dailyLoadError": "日次コストの読み込みに失敗しました",
+    "perUserLoadError": "ユーザー別コストの読み込みに失敗しました",
+    "range": {
+      "label": "期間",
+      "last7": "過去 7 日間",
+      "last14": "過去 14 日間",
+      "last30": "過去 30 日間",
+      "last90": "過去 90 日間"
+    },
+    "fields": {
+      "user": "ユーザー",
+      "day": "日付"
+    },
+    "sortAscending": "昇順で並び替え",
+    "sortDescending": "降順で並び替え"
+  },
+  "audit": {
+    "title": "監査ログ",
+    "subtitle": "すべての受信メッセージと Claude 呼び出しの追記専用ログ",
+    "search": "相関 ID で検索…",
+    "filters": "フィルター",
+    "eventType": "イベントタイプ",
+    "allEvents": "すべてのイベント",
+    "empty": "監査エントリが見つかりません",
+    "loadError": "監査ログの読み込みに失敗しました",
+    "filterUser": "ユーザー",
+    "filterFrom": "開始",
+    "filterTo": "終了",
+    "clearFilters": "フィルターをクリア",
+    "allUsers": "すべてのユーザー",
+    "fields": {
+      "ts": "タイムスタンプ",
+      "correlationId": "相関 ID",
+      "user": "ユーザー",
+      "eventType": "イベント",
+      "tool": "ツール",
+      "cost": "コスト",
+      "duration": "所要時間",
+      "exitCode": "終了コード",
+      "command": "コマンド",
+      "error": "エラー"
+    },
+    "events": {
+      "msg_in": "メッセージ受信",
+      "msg_out": "メッセージ送信",
+      "auth_fail": "認証失敗",
+      "rate_limit": "レート制限",
+      "claude_ok": "Claude 成功",
+      "claude_error": "Claude エラー"
+    },
+    "pagination": {
+      "previous": "前へ",
+      "next": "次へ"
+    },
+    "showDetails": "詳細を表示",
+    "hideDetails": "詳細を非表示"
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "リレーの動作を構成します",
+    "loadError": "設定の読み込みに失敗しました",
+    "saveFailed": "設定の保存に失敗しました",
+    "restartFailed": "Bot の再起動に失敗しました",
+    "saved": "設定を保存しました",
+    "unsavedChanges": "保存されていない変更があります",
+    "restart": "Bot を再起動",
+    "restarting": "再起動中…",
+    "restarted": "Bot を再起動しました",
+    "restartConfirmTitle": "Bot を再起動しますか?",
+    "restartConfirmDescription": "進行中のリクエストは中止され、Bot が再び準備されるまでユーザーに一時的な遅延が発生する可能性があります。",
+    "restartNow": "今すぐ再起動",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "すべてのユーザーリクエストで使用する Claude モデルとターン上限"
+      },
+      "scheduler": {
+        "title": "スケジューラー",
+        "description": "定期タスクを実行するバックグラウンドワーカー"
+      },
+      "metrics": {
+        "title": "Prometheus メトリクス",
+        "description": "オブザーバビリティのためのメトリクスエンドポイント"
+      },
+      "attachments": {
+        "title": "添付ファイル",
+        "description": "Telegram と Slack から転送されるファイルアップロード"
+      },
+      "logging": {
+        "title": "ログ",
+        "description": "Bot が stdout にログを書き込む方法"
+      }
+    },
+    "fields": {
+      "enabled": "有効",
+      "claudeModel": "モデル",
+      "maxTurns": "最大ターン数",
+      "pollInterval": "ポーリング間隔(秒)",
+      "maxTasksPerUser": "ユーザーあたりの最大タスク数",
+      "metricsHost": "ホスト",
+      "metricsPort": "ポート",
+      "maxFileSize": "最大ファイルサイズ(バイト)",
+      "logLevel": "ログレベル",
+      "logJson": "JSON 出力"
+    },
+    "logLevels": {
+      "DEBUG": "デバッグ",
+      "INFO": "情報",
+      "WARNING": "警告",
+      "ERROR": "エラー",
+      "CRITICAL": "重大"
+    },
+    "validation": {
+      "modelRequired": "モデルは必須です",
+      "hostRequired": "ホストは必須です",
+      "portInvalid": "ポートは 1 から 65535 の間である必要があります",
+      "maxTurnsInvalid": "最大ターン数は 1 から 100 の間である必要があります",
+      "pollIntervalInvalid": "ポーリング間隔は 1 から 3600 秒の間である必要があります",
+      "maxTasksInvalid": "ユーザーあたりの最大タスク数は 1 から 1000 の間である必要があります",
+      "maxFileSizeInvalid": "最大ファイルサイズは正の整数である必要があります"
+    }
+  },
+  "login": {
+    "title": "サインイン",
+    "description": "管理者パスワードを入力してください",
+    "password": "パスワード",
+    "submit": "サインイン",
+    "error": "パスワードが無効です",
+    "placeholder": "管理者パスワード"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "enable": "有効化",
+    "disable": "無効化",
+    "loading": "読み込み中…",
+    "error": "問題が発生しました",
+    "retry": "再試行",
+    "tryAgain": "もう一度お試しください",
+    "noData": "表示するデータがありません",
+    "confirm": "確認",
+    "back": "戻る",
+    "actions": "操作",
+    "close": "閉じる",
+    "yes": "はい",
+    "no": "いいえ",
+    "search": "検索",
+    "dismiss": "閉じる"
+  }
+}
