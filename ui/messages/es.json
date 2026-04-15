@@ -1,0 +1,357 @@
+{
+  "app": {
+    "title": "datronis-relay",
+    "description": "Panel de administración"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "users": "Usuarios",
+    "adapters": "Adaptadores",
+    "tasks": "Tareas programadas",
+    "cost": "Costos",
+    "audit": "Registro de auditoría",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "subtitle": "Estado en vivo, costos y actividad del relay",
+    "status": "Estado del sistema",
+    "version": "Versión",
+    "uptime": "Tiempo activo",
+    "adapters": "Adaptadores",
+    "scheduler": "Planificador",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "running": "En ejecución",
+    "stopped": "Detenido",
+    "costToday": "Costo hoy",
+    "costWeek": "Costo (7 días)",
+    "costMonth": "Costo (30 días)",
+    "recentActivity": "Actividad reciente",
+    "noActivity": "No hay actividad reciente",
+    "loadError": "Error al cargar los datos del panel",
+    "quickActions": "Acciones rápidas",
+    "addUser": "Agregar usuario",
+    "createTask": "Crear tarea"
+  },
+  "users": {
+    "title": "Usuarios",
+    "subtitle": "Administra usuarios de plataformas, permisos de herramientas y límites de velocidad",
+    "add": "Agregar usuario",
+    "edit": "Editar usuario",
+    "delete": "Eliminar usuario",
+    "save": "Guardar usuario",
+    "create": "Crear usuario",
+    "confirmDelete": "¿Seguro que deseas eliminar a {name}? Sus tareas programadas se desactivarán.",
+    "deleteTitle": "¿Eliminar usuario?",
+    "deleteDescription": "Esto desactivará todas las tareas programadas de {name}. Esta acción no se puede deshacer.",
+    "created": "Usuario creado correctamente",
+    "updated": "Usuario actualizado correctamente",
+    "deleted": "Usuario eliminado correctamente",
+    "createFailed": "Error al crear el usuario",
+    "updateFailed": "Error al actualizar el usuario",
+    "deleteFailed": "Error al eliminar el usuario",
+    "loadError": "Error al cargar los usuarios",
+    "empty": "Todavía no hay usuarios configurados",
+    "addFirst": "Agrega tu primer usuario para comenzar",
+    "notFound": "Usuario no encontrado",
+    "lastActive": "Última actividad",
+    "never": "Nunca",
+    "fields": {
+      "id": "ID de usuario",
+      "displayName": "Nombre para mostrar",
+      "platform": "Plataforma",
+      "allowedTools": "Herramientas permitidas",
+      "ratePerMinute": "Solicitudes / minuto",
+      "ratePerDay": "Solicitudes / día"
+    },
+    "placeholders": {
+      "id": "p. ej., 123456789",
+      "displayName": "p. ej., Alicia"
+    },
+    "hints": {
+      "id": "ID numérico de la plataforma (el prefijo se añade automáticamente)",
+      "allowedTools": "Selecciona qué herramientas puede invocar este usuario a través del relay"
+    },
+    "platforms": {
+      "telegram": "Telegram",
+      "slack": "Slack"
+    },
+    "tools": {
+      "read": "Lectura",
+      "write": "Escritura",
+      "bash": "Bash"
+    },
+    "validation": {
+      "idRequired": "El ID de usuario es obligatorio",
+      "idNumeric": "El ID de usuario debe ser numérico",
+      "nameRequired": "El nombre para mostrar es obligatorio",
+      "nameTooLong": "El nombre para mostrar debe tener 64 caracteres o menos",
+      "ratePositive": "El límite de velocidad debe ser un número positivo",
+      "toolsRequired": "Debe seleccionarse al menos una herramienta"
+    }
+  },
+  "adapters": {
+    "title": "Adaptadores",
+    "subtitle": "Habilita o deshabilita plataformas y rota sus tokens de API",
+    "telegram": "Telegram",
+    "slack": "Slack",
+    "enable": "Habilitar",
+    "disable": "Deshabilitar",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "healthy": "Saludable",
+    "unhealthy": "Con problemas",
+    "tokenSet": "Token configurado",
+    "tokenMissing": "Token ausente",
+    "rotateToken": "Rotar token",
+    "rotateTokenTitle": "Rotar token de {adapter}",
+    "rotateTokenDescription": "Pega el nuevo token del bot. El bot adoptará el nuevo token en el próximo reinicio.",
+    "newToken": "Nuevo token",
+    "newTokenPlaceholder": "Pega el nuevo token",
+    "updated": "Adaptador actualizado",
+    "tokenRotated": "Token rotado",
+    "loadError": "Error al cargar los adaptadores",
+    "updateFailed": "Error al actualizar el adaptador",
+    "rotateFailed": "Error al rotar el token",
+    "empty": "No hay adaptadores configurados",
+    "descriptions": {
+      "telegram": "Tu bot de Telegram — configurado mediante BotFather",
+      "slack": "Tu aplicación de Slack — configurada en el panel de administración de Slack"
+    }
+  },
+  "tasks": {
+    "title": "Tareas programadas",
+    "subtitle": "Ejecuta prompts de Claude de forma periódica según un calendario",
+    "add": "Nueva tarea",
+    "save": "Guardar tarea",
+    "create": "Crear tarea",
+    "empty": "No hay tareas programadas",
+    "addFirst": "Programa tu primera tarea recurrente",
+    "noUsers": "Necesitas un usuario antes de poder programar tareas",
+    "addFirstUser": "Agregar un usuario",
+    "paused": "Tarea pausada",
+    "resumed": "Tarea reanudada",
+    "deleted": "Tarea eliminada",
+    "created": "Tarea creada",
+    "createFailed": "Error al crear la tarea",
+    "updateFailed": "Error al actualizar la tarea",
+    "deleteFailed": "Error al eliminar la tarea",
+    "loadError": "Error al cargar las tareas",
+    "usersLoadError": "Error al cargar los usuarios para el formulario de tareas",
+    "deleteTitle": "¿Eliminar tarea?",
+    "deleteDescription": "Esto eliminará permanentemente la tarea programada. Esta acción no se puede deshacer.",
+    "statusActive": "Activa",
+    "statusPaused": "Pausada",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "fields": {
+      "prompt": "Prompt",
+      "interval": "Intervalo",
+      "nextRun": "Próxima ejecución",
+      "user": "Usuario",
+      "platform": "Plataforma",
+      "status": "Estado",
+      "channelRef": "Referencia de canal",
+      "customSeconds": "Personalizado (segundos)"
+    },
+    "intervals": {
+      "30s": "Cada 30 segundos",
+      "1m": "Cada minuto",
+      "5m": "Cada 5 minutos",
+      "15m": "Cada 15 minutos",
+      "30m": "Cada 30 minutos",
+      "1h": "Cada hora",
+      "6h": "Cada 6 horas",
+      "12h": "Cada 12 horas",
+      "1d": "Diario",
+      "custom": "Personalizado"
+    },
+    "placeholders": {
+      "prompt": "p. ej. Resume los registros de errores de hoy",
+      "channelRef": "p. ej. -1001234567890",
+      "customSeconds": "Segundos"
+    },
+    "hints": {
+      "selectUser": "Elige con qué permisos de usuario se ejecuta esta tarea",
+      "channelRef": "ID de chat de Telegram o ID de canal de Slack — destino de las respuestas",
+      "prompt": "El prompt que Claude ejecuta cada vez que se dispara la tarea"
+    },
+    "validation": {
+      "userRequired": "Selecciona un usuario",
+      "channelRefRequired": "La referencia de canal es obligatoria",
+      "promptRequired": "El prompt es obligatorio",
+      "promptTooLong": "El prompt debe tener 4000 caracteres o menos",
+      "intervalPositive": "El intervalo debe ser un número positivo de segundos"
+    }
+  },
+  "cost": {
+    "title": "Costos",
+    "subtitle": "Monitorea el uso de tokens y el gasto por usuario y por día",
+    "today": "Hoy",
+    "week": "Últimos 7 días",
+    "month": "Últimos 30 días",
+    "total": "Total",
+    "tokensIn": "Tokens de entrada",
+    "tokensOut": "Tokens de salida",
+    "costUsd": "Costo (USD)",
+    "dailyCost": "Costo diario",
+    "perUser": "Por usuario",
+    "exportCsv": "Exportar CSV",
+    "exportFailed": "Error al exportar CSV",
+    "noData": "Todavía no hay datos de costo",
+    "summaryLoadError": "Error al cargar el resumen de costos",
+    "dailyLoadError": "Error al cargar los costos diarios",
+    "perUserLoadError": "Error al cargar los costos por usuario",
+    "range": {
+      "label": "Rango",
+      "last7": "Últimos 7 días",
+      "last14": "Últimos 14 días",
+      "last30": "Últimos 30 días",
+      "last90": "Últimos 90 días"
+    },
+    "fields": {
+      "user": "Usuario",
+      "day": "Día"
+    },
+    "sortAscending": "Ordenar ascendente",
+    "sortDescending": "Ordenar descendente"
+  },
+  "audit": {
+    "title": "Registro de auditoría",
+    "subtitle": "Cada mensaje entrante y cada llamada a Claude, solo añadidos",
+    "search": "Buscar por ID de correlación…",
+    "filters": "Filtros",
+    "eventType": "Tipo de evento",
+    "allEvents": "Todos los eventos",
+    "empty": "No se encontraron entradas de auditoría",
+    "loadError": "Error al cargar el registro de auditoría",
+    "filterUser": "Usuario",
+    "filterFrom": "Desde",
+    "filterTo": "Hasta",
+    "clearFilters": "Limpiar filtros",
+    "allUsers": "Todos los usuarios",
+    "fields": {
+      "ts": "Marca de tiempo",
+      "correlationId": "Correlación",
+      "user": "Usuario",
+      "eventType": "Evento",
+      "tool": "Herramienta",
+      "cost": "Costo",
+      "duration": "Duración",
+      "exitCode": "Código de salida",
+      "command": "Comando",
+      "error": "Error"
+    },
+    "events": {
+      "msg_in": "Mensaje recibido",
+      "msg_out": "Mensaje enviado",
+      "auth_fail": "Autenticación fallida",
+      "rate_limit": "Límite de velocidad",
+      "claude_ok": "Éxito de Claude",
+      "claude_error": "Error de Claude"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "showDetails": "Mostrar detalles",
+    "hideDetails": "Ocultar detalles"
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Configura cómo se ejecuta el relay",
+    "loadError": "Error al cargar la configuración",
+    "saveFailed": "Error al guardar la configuración",
+    "restartFailed": "Error al reiniciar el bot",
+    "saved": "Configuración guardada",
+    "unsavedChanges": "Tienes cambios sin guardar",
+    "restart": "Reiniciar bot",
+    "restarting": "Reiniciando…",
+    "restarted": "Bot reiniciado correctamente",
+    "restartConfirmTitle": "¿Reiniciar el bot?",
+    "restartConfirmDescription": "Las solicitudes en curso se cancelarán y los usuarios pueden experimentar un breve retraso antes de que el bot esté listo de nuevo.",
+    "restartNow": "Reiniciar ahora",
+    "sections": {
+      "claude": {
+        "title": "Claude",
+        "description": "El modelo de Claude y el límite de turnos usado para cada solicitud de usuario"
+      },
+      "scheduler": {
+        "title": "Planificador",
+        "description": "Trabajador en segundo plano que ejecuta tareas recurrentes"
+      },
+      "metrics": {
+        "title": "Métricas de Prometheus",
+        "description": "Endpoint de métricas para observabilidad"
+      },
+      "attachments": {
+        "title": "Adjuntos",
+        "description": "Archivos subidos reenviados desde Telegram y Slack"
+      },
+      "logging": {
+        "title": "Registro",
+        "description": "Cómo el bot escribe los logs en stdout"
+      }
+    },
+    "fields": {
+      "enabled": "Habilitado",
+      "claudeModel": "Modelo",
+      "maxTurns": "Turnos máximos",
+      "pollInterval": "Intervalo de sondeo (segundos)",
+      "maxTasksPerUser": "Máximo de tareas por usuario",
+      "metricsHost": "Host",
+      "metricsPort": "Puerto",
+      "maxFileSize": "Tamaño máximo de archivo (bytes)",
+      "logLevel": "Nivel de registro",
+      "logJson": "Salida JSON"
+    },
+    "logLevels": {
+      "DEBUG": "Depuración",
+      "INFO": "Información",
+      "WARNING": "Advertencia",
+      "ERROR": "Error",
+      "CRITICAL": "Crítico"
+    },
+    "validation": {
+      "modelRequired": "El modelo es obligatorio",
+      "hostRequired": "El host es obligatorio",
+      "portInvalid": "El puerto debe estar entre 1 y 65535",
+      "maxTurnsInvalid": "Los turnos máximos deben estar entre 1 y 100",
+      "pollIntervalInvalid": "El intervalo de sondeo debe estar entre 1 y 3600 segundos",
+      "maxTasksInvalid": "El máximo de tareas por usuario debe estar entre 1 y 1000",
+      "maxFileSizeInvalid": "El tamaño máximo de archivo debe ser un entero positivo"
+    }
+  },
+  "login": {
+    "title": "Iniciar sesión",
+    "description": "Ingresa la contraseña de administrador para acceder al panel",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "error": "Contraseña inválida",
+    "placeholder": "Contraseña de administrador"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "enable": "Habilitar",
+    "disable": "Deshabilitar",
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "retry": "Reintentar",
+    "tryAgain": "Intentar de nuevo",
+    "noData": "No hay datos para mostrar",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "actions": "Acciones",
+    "close": "Cerrar",
+    "yes": "Sí",
+    "no": "No",
+    "search": "Buscar",
+    "dismiss": "Descartar"
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import en from "../../messages/en.json";
 import de from "../../messages/de.json";
+import es from "../../messages/es.json";
 import fr from "../../messages/fr.json";
 import zh from "../../messages/zh.json";
 import ja from "../../messages/ja.json";
@@ -34,6 +35,7 @@ function collectKeys(
 
 const LOCALES: Array<[string, JsonShape]> = [
   ["de", de as JsonShape],
+  ["es", es as JsonShape],
   ["fr", fr as JsonShape],
   ["zh", zh as JsonShape],
   ["ja", ja as JsonShape],

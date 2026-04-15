@@ -8,6 +8,7 @@ import { routing, type Locale } from "@/i18n/routing";
 const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   de: "Deutsch",
+  es: "Español",
   fr: "Français",
   zh: "中文",
   ja: "日本語",
