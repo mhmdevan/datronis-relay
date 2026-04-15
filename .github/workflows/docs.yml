@@ -35,7 +35,14 @@ jobs:
           pip install -e ".[docs]"
       - name: Build site (strict)
         run: mkdocs build --strict
+      # `enablement: true` makes this action *create* the Pages site on first
+      # run instead of expecting it to already exist. Without it, a brand-new
+      # repo hits HTTP 404 on `GET /repos/{owner}/{repo}/pages` and the job
+      # fails until a maintainer manually clicks Settings → Pages → Source:
+      # GitHub Actions. With it, every fresh fork self-bootstraps on first push.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
