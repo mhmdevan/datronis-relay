@@ -63,7 +63,15 @@ nav:
   - Home: index.md
   - Get started:
       - Quickstart: quickstart.md
+      - Installation: installation.md
       - Slack setup: slack_setup.md
+      - Use cases & scenarios: use-cases.md
+  - Project:
+      - Architecture: architecture.md
+      - Engineering challenges: engineering.md
+      - Testing strategy: testing.md
+      - Web dashboard: web-dashboard.md
+      - Roadmap: roadmap.md
   - Reference:
       - API reference: api_reference.md
       - Versioning & deprecation: versioning.md
