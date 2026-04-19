@@ -42,3 +42,4 @@ datronis-relay-roadmap.md
 .DS_Store
 /ui/.next
 /ui/node_modules
+poetry.lock

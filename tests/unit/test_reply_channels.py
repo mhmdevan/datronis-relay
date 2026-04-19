@@ -21,10 +21,12 @@ from datronis_relay.core.reply_channel import ReplyChannel
 class _FakeTelegramChat:
     def __init__(self) -> None:
         self.sent: list[str] = []
+        self.sent_parse_modes: list[str | None] = []
         self.typing_calls: int = 0
 
-    async def send_message(self, text: str) -> None:
+    async def send_message(self, text: str, **kwargs: Any) -> None:
         self.sent.append(text)
+        self.sent_parse_modes.append(kwargs.get("parse_mode"))
 
     async def send_chat_action(self, _action: Any) -> None:
         self.typing_calls += 1
@@ -95,6 +97,12 @@ class TestTelegramReplyChannelSpecifics:
         channel = TelegramReplyChannel(fake_chat)  # type: ignore[arg-type]
         await channel.send_text("hello")
         assert fake_chat.sent == ["hello"]
+
+    async def test_send_text_uses_html_parse_mode(self) -> None:
+        fake_chat = _FakeTelegramChat()
+        channel = TelegramReplyChannel(fake_chat)  # type: ignore[arg-type]
+        await channel.send_text("<b>bold</b>")
+        assert fake_chat.sent_parse_modes == ["HTML"]
 
     async def test_typing_task_fires_at_least_once(self) -> None:
         fake_chat = _FakeTelegramChat()

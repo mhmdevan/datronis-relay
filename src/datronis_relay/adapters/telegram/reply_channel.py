@@ -7,7 +7,7 @@ from types import TracebackType
 
 import structlog
 from telegram import Bot, Chat
-from telegram.constants import ChatAction
+from telegram.constants import ChatAction, ParseMode
 
 from datronis_relay.core.reply_channel import ReplyChannel
 
@@ -28,7 +28,7 @@ class TelegramReplyChannel(ReplyChannel):
         self._chat = chat
 
     async def send_text(self, text: str) -> None:
-        await self._chat.send_message(text)
+        await self._chat.send_message(text, parse_mode=ParseMode.HTML)
 
     def typing_indicator(self) -> AbstractAsyncContextManager[None]:
         return _TelegramTypingIndicator(self._chat)
@@ -85,7 +85,9 @@ class TelegramBotReplyChannel(ReplyChannel):
         self._chat_id = chat_id
 
     async def send_text(self, text: str) -> None:
-        await self._bot.send_message(chat_id=self._chat_id, text=text)
+        await self._bot.send_message(
+            chat_id=self._chat_id, text=text, parse_mode=ParseMode.HTML,
+        )
 
     def typing_indicator(self) -> AbstractAsyncContextManager[None]:
         return _TelegramBotTypingIndicator(self._bot, self._chat_id)
