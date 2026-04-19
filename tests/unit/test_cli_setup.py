@@ -21,13 +21,18 @@ from datronis_relay.cli.prompts import ScriptedPrompter
 from datronis_relay.cli.setup import (
     CollectedConfig,
     SetupOptions,
+    _build_ui,
     _build_users,
     _ensure_claude_cli_available,
+    _ensure_pnpm_available,
     _find_datronis_binary,
+    _find_ui_dir,
     _install_claude_cli_native,
     _is_claude_already_logged_in,
+    _maybe_open_firewall,
     _maybe_install_systemd_service,
     _maybe_run_claude_login,
+    _maybe_setup_ui,
     _show_login_url,
     _test_claude_cli_works,
     _write_config,
@@ -821,3 +826,144 @@ users:
         result = run_doctor(DoctorOptions(config_path=config_path), prompter=prompter)
         assert result == 1
         assert any("Slack adapter: enabled but missing" in line for line in prompter.output)
+
+
+# ------------------------------------------------------------ web dashboard (UI)
+
+
+class TestFindUiDir:
+    def test_finds_ui_in_cwd(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        ui_dir = tmp_path / "ui"
+        ui_dir.mkdir()
+        (ui_dir / "package.json").write_text('{"name": "test"}')
+        monkeypatch.chdir(tmp_path)
+        result = _find_ui_dir()
+        assert result is not None
+        assert result.name == "ui"
+
+    def test_returns_none_when_no_ui(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        result = _find_ui_dir()
+        assert result is None
+
+
+class TestEnsurePnpmAvailable:
+    def test_pnpm_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/pnpm" if cmd == "pnpm" else None)
+        monkeypatch.setattr(Path, "is_file", lambda self: "pnpm" in str(self))
+        prompter = ScriptedPrompter([])
+        result = _ensure_pnpm_available(prompter)
+        assert result is not None
+
+    def test_pnpm_missing_no_npm(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        prompter = ScriptedPrompter([])
+        result = _ensure_pnpm_available(prompter)
+        assert result is None
+        assert any("npm is also not found" in line for line in prompter.output)
+
+    def test_pnpm_missing_user_declines_install(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            shutil, "which", lambda cmd: "/usr/bin/npm" if cmd == "npm" else None
+        )
+        prompter = ScriptedPrompter([False])  # decline install
+        result = _ensure_pnpm_available(prompter)
+        assert result is None
+
+
+class TestBuildUi:
+    def test_success(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0, stderr=""),
+        )
+        prompter = ScriptedPrompter([])
+        assert _build_ui(prompter, tmp_path, "/usr/bin/pnpm") is True
+        assert any("built successfully" in line for line in prompter.output)
+
+    def test_install_fails(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            subprocess, "run",
+            lambda *_a, **_k: SimpleNamespace(returncode=1, stderr="error: ENOENT"),
+        )
+        prompter = ScriptedPrompter([])
+        assert _build_ui(prompter, tmp_path, "/usr/bin/pnpm") is False
+
+    def test_timeout(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _timeout(*_a: object, **_k: object) -> object:
+            raise subprocess.TimeoutExpired("pnpm", 300)
+
+        monkeypatch.setattr(subprocess, "run", _timeout)
+        prompter = ScriptedPrompter([])
+        assert _build_ui(prompter, tmp_path, "/usr/bin/pnpm") is False
+
+
+class TestMaybeOpenFirewall:
+    def test_opens_port(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/sbin/ufw")
+        monkeypatch.setattr(os, "geteuid", lambda: 0)
+        monkeypatch.setattr(
+            subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0, stderr=""),
+        )
+        prompter = ScriptedPrompter([])
+        _maybe_open_firewall(prompter, 3210)
+        assert any("3210/tcp opened" in line for line in prompter.output)
+
+    def test_no_ufw_skips(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(shutil, "which", lambda _: None)
+        prompter = ScriptedPrompter([])
+        _maybe_open_firewall(prompter, 3210)
+        assert len(prompter.output) == 0
+
+
+class TestMaybeSetupUi:
+    def test_skips_on_non_linux(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "darwin")
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([])
+        assert _maybe_setup_ui(prompter, options) is False
+
+    def test_skips_without_systemctl(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(
+            shutil, "which", lambda cmd: None if cmd == "systemctl" else "/usr/bin/" + cmd
+        )
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([])
+        assert _maybe_setup_ui(prompter, options) is False
+
+    def test_skips_without_ui_dir(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(cli_setup_mod, "_find_ui_dir", lambda: None)
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([])
+        assert _maybe_setup_ui(prompter, options) is False
+
+    def test_user_declines(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(cli_setup_mod, "_find_ui_dir", lambda: tmp_path / "ui")
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([False])  # decline
+        assert _maybe_setup_ui(prompter, options) is False
+
+    def test_full_happy_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+        monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/systemctl")
+        monkeypatch.setattr(os, "geteuid", lambda: 0)
+        monkeypatch.setattr(cli_setup_mod, "_find_ui_dir", lambda: tmp_path / "ui")
+        monkeypatch.setattr(
+            cli_setup_mod, "_ensure_pnpm_available", lambda p: "/usr/bin/pnpm"
+        )
+        monkeypatch.setattr(cli_setup_mod, "_build_ui", lambda p, d, pn: True)
+        monkeypatch.setattr(
+            subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0, stderr=""),
+        )
+        options = SetupOptions(config_path=tmp_path / "c.yaml", env_path=tmp_path / ".env")
+        prompter = ScriptedPrompter([True])  # accept
+        assert _maybe_setup_ui(prompter, options) is True
+        assert any("installed and started" in line for line in prompter.output)

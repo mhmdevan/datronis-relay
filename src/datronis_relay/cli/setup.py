@@ -80,6 +80,7 @@ class CollectedConfig:
     attachments_path: str = "./data/attachments"
     claude_model: str = "claude-sonnet-4-6"
     claude_login_done: bool = False
+    enable_ui: bool = True
 
 
 # --------------------------------------------------------------------- entrypoint
@@ -119,10 +120,12 @@ def run_setup(
 
     # On Linux with systemctl, offer to install as a background service.
     service_installed = False
+    ui_installed = False
     if not options.skip_external_commands:
         service_installed = _maybe_install_systemd_service(active_prompter, options)
+        ui_installed = _maybe_setup_ui(active_prompter, options)
 
-    _print_footer(active_prompter, collected, options, service_installed)
+    _print_footer(active_prompter, collected, options, service_installed, ui_installed)
     return 0
 
 
@@ -145,6 +148,7 @@ def _print_footer(
     collected: CollectedConfig,
     options: SetupOptions,
     service_installed: bool = False,
+    ui_installed: bool = False,
 ) -> None:
     prompter.say("")
     prompter.say("=" * 60)
@@ -174,6 +178,14 @@ def _print_footer(
         prompter.say("Start the bot:")
         prompter.say("  datronis-relay")
     prompter.say("")
+
+    if ui_installed:
+        prompter.say("The web dashboard is running as a background service.")
+        prompter.say("  URL:             http://<your-server-ip>:3210")
+        prompter.say("  View logs:       sudo journalctl -u datronis-relay-ui -f")
+        prompter.say("  Restart:         sudo systemctl restart datronis-relay-ui")
+        prompter.say("  Stop:            sudo systemctl stop datronis-relay-ui")
+        prompter.say("")
 
 
 # -------------------------------------------------------------------- collection
@@ -528,6 +540,259 @@ def _maybe_install_systemd_service(prompter: Prompter, options: SetupOptions) ->
     except OSError as exc:
         prompter.say(f"  Error installing service: {exc}")
         return False
+
+
+# ----------------------------------------------------------- web dashboard (UI)
+
+_SYSTEMD_UI_UNIT_TEMPLATE = """\
+[Unit]
+Description=datronis-relay web dashboard (Next.js on port 3210)
+After=network-online.target datronis-relay.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={user}
+Group={user}
+WorkingDirectory={ui_dir}
+Environment=HOME={home}
+Environment=PATH={service_path}
+Environment=NODE_ENV=production
+ExecStart={pnpm_path} start
+Restart=on-failure
+RestartSec=5s
+
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths={ui_dir} {home}
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+UI_UNIT_FILE_PATH = Path("/etc/systemd/system/datronis-relay-ui.service")
+UI_PORT = 3210
+
+
+def _find_ui_dir() -> Path | None:
+    """Locate the ui/ directory relative to the project root."""
+    candidates = [
+        Path.cwd() / "ui",
+        Path.cwd().parent / "ui",
+    ]
+    for candidate in candidates:
+        if (candidate / "package.json").is_file():
+            return candidate.resolve()
+    return None
+
+
+def _find_pnpm() -> str | None:
+    """Find the pnpm binary."""
+    found = shutil.which("pnpm")
+    if found:
+        return str(Path(found).resolve())
+    # Check common locations
+    for candidate in [
+        Path.home() / ".local" / "share" / "pnpm" / "pnpm",
+        Path("/usr/local/bin/pnpm"),
+    ]:
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def _ensure_pnpm_available(prompter: Prompter) -> str | None:
+    """Check for pnpm, offer to install if missing. Returns path or None."""
+    pnpm = _find_pnpm()
+    if pnpm:
+        prompter.say(f"  pnpm found: {pnpm}")
+        return pnpm
+
+    prompter.say("  pnpm is not installed.")
+    npm = shutil.which("npm")
+    if not npm:
+        prompter.say("  npm is also not found — cannot install pnpm automatically.")
+        prompter.say("  Install Node.js and pnpm, then re-run setup.")
+        return None
+
+    if not prompter.confirm("  Install pnpm now?", default=True):
+        return None
+
+    prompter.say("  Running: npm install -g pnpm")
+    try:
+        result = subprocess.run(
+            ["npm", "install", "-g", "pnpm"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            # Try with sudo
+            prompter.say("  Retrying with sudo...")
+            result = subprocess.run(
+                ["sudo", "npm", "install", "-g", "pnpm"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+        if result.returncode != 0:
+            prompter.say(f"  Failed to install pnpm: {result.stderr.strip()}")
+            return None
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as exc:
+        prompter.say(f"  Error installing pnpm: {exc}")
+        return None
+
+    pnpm = _find_pnpm()
+    if pnpm:
+        prompter.say(f"  pnpm installed: {pnpm}")
+    else:
+        prompter.say("  pnpm installed but not found on PATH.")
+    return pnpm
+
+
+def _build_ui(prompter: Prompter, ui_dir: Path, pnpm: str) -> bool:
+    """Run pnpm install && pnpm build in the UI directory."""
+    for label, cmd in [("pnpm install", [pnpm, "install"]), ("pnpm build", [pnpm, "build"])]:
+        prompter.say(f"  Running: {label}")
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=str(ui_dir),
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if result.returncode != 0:
+                prompter.say(f"  {label} failed:")
+                # Show last few lines of stderr
+                for line in result.stderr.strip().splitlines()[-5:]:
+                    prompter.say(f"    {line}")
+                return False
+        except subprocess.TimeoutExpired:
+            prompter.say(f"  {label} timed out after 5 minutes.")
+            return False
+        except (FileNotFoundError, OSError) as exc:
+            prompter.say(f"  Error running {label}: {exc}")
+            return False
+    prompter.say("  UI built successfully.")
+    return True
+
+
+def _maybe_open_firewall(prompter: Prompter, port: int) -> None:
+    """Open a firewall port via ufw if available."""
+    if not shutil.which("ufw"):
+        return
+    prompter.say(f"  Opening firewall port {port}/tcp...")
+    use_sudo = os.geteuid() != 0
+    cmd = ["ufw", "allow", f"{port}/tcp", "comment", "datronis-relay UI"]
+    if use_sudo:
+        cmd = ["sudo", *cmd]
+    try:
+        result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        if result.returncode == 0:
+            prompter.say(f"  Firewall port {port}/tcp opened.")
+        else:
+            prompter.say(f"  Could not open firewall: {result.stderr.strip()}")
+            prompter.say(f"  Run manually: sudo ufw allow {port}/tcp")
+    except (FileNotFoundError, OSError):
+        prompter.say(f"  Could not run ufw. Open port {port} manually if needed.")
+
+
+def _maybe_setup_ui(prompter: Prompter, options: SetupOptions) -> bool:
+    """Offer to build and install the web dashboard as a systemd service."""
+    if sys.platform != "linux":
+        return False
+    if not shutil.which("systemctl"):
+        return False
+
+    ui_dir = _find_ui_dir()
+    if not ui_dir:
+        return False
+
+    prompter.say("")
+    prompter.say("  Web dashboard detected.")
+    if not prompter.confirm(
+        "  Enable the web dashboard? (runs on port 3210)", default=True
+    ):
+        return False
+
+    # 1. Ensure pnpm is available
+    pnpm = _ensure_pnpm_available(prompter)
+    if not pnpm:
+        return False
+
+    # 2. Build the UI
+    prompter.say("")
+    if not _build_ui(prompter, ui_dir, pnpm):
+        return False
+
+    # 3. Install systemd service
+    user = os.getenv("USER") or os.getenv("LOGNAME") or "root"
+    home = str(Path.home().resolve())
+
+    # Build PATH for the service
+    path_dirs: list[str] = [str(Path(pnpm).parent)]
+    node_path = shutil.which("node")
+    if node_path:
+        path_dirs.append(str(Path(node_path).resolve().parent))
+    path_dirs.extend(["/usr/local/bin", "/usr/bin", "/bin"])
+    seen: set[str] = set()
+    unique_path: list[str] = []
+    for d in path_dirs:
+        if d not in seen:
+            seen.add(d)
+            unique_path.append(d)
+    service_path = ":".join(unique_path)
+
+    unit_content = _SYSTEMD_UI_UNIT_TEMPLATE.format(
+        user=user,
+        ui_dir=ui_dir,
+        home=home,
+        service_path=service_path,
+        pnpm_path=pnpm,
+    )
+
+    prompter.say(f"  Writing {UI_UNIT_FILE_PATH}")
+    use_sudo = os.geteuid() != 0
+
+    try:
+        tee_cmd = (
+            ["sudo", "tee", str(UI_UNIT_FILE_PATH)]
+            if use_sudo
+            else ["tee", str(UI_UNIT_FILE_PATH)]
+        )
+        tee_proc = subprocess.run(
+            tee_cmd, input=unit_content, text=True, capture_output=True, check=False,
+        )
+        if tee_proc.returncode != 0:
+            prompter.say(f"  Failed to write unit file: {tee_proc.stderr.strip()}")
+            return False
+
+        for cmd in [
+            ["systemctl", "daemon-reload"],
+            ["systemctl", "enable", "--now", "datronis-relay-ui"],
+        ]:
+            full_cmd = ["sudo", *cmd] if use_sudo else cmd
+            prompter.say(f"  Running: {' '.join(full_cmd)}")
+            result = subprocess.run(full_cmd, check=False, capture_output=True, text=True)
+            if result.returncode != 0:
+                prompter.say(f"  Failed: {result.stderr.strip()}")
+                return False
+
+        prompter.say("  Dashboard service installed and started.")
+    except (FileNotFoundError, OSError) as exc:
+        prompter.say(f"  Error installing dashboard service: {exc}")
+        return False
+
+    # 4. Open firewall
+    _maybe_open_firewall(prompter, UI_PORT)
+
+    return True
 
 
 # ----------------------------------------------------------- dependency checks
