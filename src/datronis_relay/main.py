@@ -38,6 +38,7 @@ from datronis_relay.infrastructure.formatting import (
 from datronis_relay.infrastructure.logging import configure_logging
 from datronis_relay.infrastructure.metrics import start_metrics_server
 from datronis_relay.infrastructure.sqlite_storage import SQLiteStorage
+from datronis_relay.api import ApiServer
 
 log = structlog.get_logger(__name__)
 
@@ -179,6 +180,11 @@ async def _run() -> None:
 
         if config.metrics.enabled:
             start_metrics_server(host=config.metrics.host, port=config.metrics.port)
+
+        # Dashboard API server — always enabled so the UI works out of the box.
+        api_server = ApiServer(config=config, storage=storage)
+        runnables.append(api_server)
+        log.info("api.server.enabled", port=3100)
 
         await _run_until_stopped(runnables)
     finally:

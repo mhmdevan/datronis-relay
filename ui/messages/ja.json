@@ -9,6 +9,7 @@
     "adapters": "アダプター",
     "tasks": "スケジュールタスク",
     "cost": "コストエクスプローラー",
+    "monitoring": "モニタリング",
     "audit": "監査ログ",
     "settings": "設定",
     "logout": "ログアウト"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "昇順で並び替え",
     "sortDescending": "降順で並び替え"
+  },
+  "monitoring": {
+    "title": "サーバーモニタリング",
+    "subtitle": "リアルタイムのサーバーメトリクス、リソース使用状況、システムの健全性",
+    "loadError": "サーバーメトリクスの読み込みに失敗しました",
+    "historyLoadError": "使用履歴の読み込みに失敗しました",
+    "noData": "モニタリングデータがありません",
+    "refresh": "更新",
+    "autoRefresh": "自動更新",
+    "collectedAt": "最終更新",
+    "sections": {
+      "overview": "システム概要",
+      "usage": "リソース使用状況",
+      "history": "使用履歴",
+      "network": "ネットワークインターフェース",
+      "disk": "ディスク使用状況"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "モデル",
+      "cores": "コア数",
+      "usage": "使用率",
+      "loadAvg": "ロードアベレージ"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "合計",
+      "used": "使用中",
+      "free": "空き",
+      "available": "利用可能",
+      "buffCache": "Buff/Cache",
+      "usage": "使用率"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "合計",
+      "used": "使用中",
+      "free": "空き",
+      "usage": "使用率"
+    },
+    "disk": {
+      "title": "ディスク",
+      "filesystem": "ファイルシステム",
+      "mount": "マウントポイント",
+      "total": "合計",
+      "used": "使用中",
+      "available": "利用可能",
+      "usage": "使用率"
+    },
+    "os": {
+      "title": "オペレーティングシステム",
+      "name": "OS",
+      "kernel": "カーネル",
+      "hostname": "ホスト名",
+      "uptime": "稼働時間",
+      "usersOnline": "オンラインユーザー"
+    },
+    "network": {
+      "title": "ネットワーク",
+      "interface": "インターフェース",
+      "status": "ステータス",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "稼働中",
+      "down": "停止中",
+      "unknown": "不明"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "実行中",
+      "stopped": "停止中",
+      "containers": "コンテナ"
+    },
+    "history": {
+      "label": "期間",
+      "last1h": "過去 1 時間",
+      "last6h": "過去 6 時間",
+      "last24h": "過去 24 時間",
+      "last7d": "過去 7 日間",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "ディスク %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "正常",
+      "warning": "警告",
+      "critical": "重大"
+    }
   },
   "audit": {
     "title": "監査ログ",

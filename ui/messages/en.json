@@ -9,6 +9,7 @@
     "adapters": "Adapters",
     "tasks": "Scheduled Tasks",
     "cost": "Cost Explorer",
+    "monitoring": "Monitoring",
     "audit": "Audit Log",
     "settings": "Settings",
     "logout": "Logout"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "Sort ascending",
     "sortDescending": "Sort descending"
+  },
+  "monitoring": {
+    "title": "Server Monitoring",
+    "subtitle": "Real-time server metrics, resource usage, and system health",
+    "loadError": "Failed to load server metrics",
+    "historyLoadError": "Failed to load usage history",
+    "noData": "No monitoring data available",
+    "refresh": "Refresh",
+    "autoRefresh": "Auto-refresh",
+    "collectedAt": "Last updated",
+    "sections": {
+      "overview": "System Overview",
+      "usage": "Resource Usage",
+      "history": "Usage History",
+      "network": "Network Interfaces",
+      "disk": "Disk Usage"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "Model",
+      "cores": "Cores",
+      "usage": "Usage",
+      "loadAvg": "Load Average"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "Total",
+      "used": "Used",
+      "free": "Free",
+      "available": "Available",
+      "buffCache": "Buff/Cache",
+      "usage": "Usage"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "Total",
+      "used": "Used",
+      "free": "Free",
+      "usage": "Usage"
+    },
+    "disk": {
+      "title": "Disk",
+      "filesystem": "Filesystem",
+      "mount": "Mount",
+      "total": "Total",
+      "used": "Used",
+      "available": "Available",
+      "usage": "Usage"
+    },
+    "os": {
+      "title": "Operating System",
+      "name": "OS",
+      "kernel": "Kernel",
+      "hostname": "Hostname",
+      "uptime": "Uptime",
+      "usersOnline": "Users Online"
+    },
+    "network": {
+      "title": "Network",
+      "interface": "Interface",
+      "status": "Status",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "UP",
+      "down": "DOWN",
+      "unknown": "Unknown"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "Running",
+      "stopped": "Stopped",
+      "containers": "Containers"
+    },
+    "history": {
+      "label": "Range",
+      "last1h": "Last 1 hour",
+      "last6h": "Last 6 hours",
+      "last24h": "Last 24 hours",
+      "last7d": "Last 7 days",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "Disk %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "critical": "Critical"
+    }
   },
   "audit": {
     "title": "Audit Log",

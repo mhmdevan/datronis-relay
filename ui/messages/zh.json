@@ -9,6 +9,7 @@
     "adapters": "适配器",
     "tasks": "计划任务",
     "cost": "成本浏览",
+    "monitoring": "监控",
     "audit": "审计日志",
     "settings": "设置",
     "logout": "退出登录"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "升序排序",
     "sortDescending": "降序排序"
+  },
+  "monitoring": {
+    "title": "服务器监控",
+    "subtitle": "实时服务器指标、资源使用情况和系统健康状态",
+    "loadError": "加载服务器指标失败",
+    "historyLoadError": "加载使用历史失败",
+    "noData": "暂无监控数据",
+    "refresh": "刷新",
+    "autoRefresh": "自动刷新",
+    "collectedAt": "最后更新",
+    "sections": {
+      "overview": "系统概览",
+      "usage": "资源使用",
+      "history": "使用历史",
+      "network": "网络接口",
+      "disk": "磁盘使用"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "型号",
+      "cores": "核心数",
+      "usage": "使用率",
+      "loadAvg": "平均负载"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "总计",
+      "used": "已用",
+      "free": "空闲",
+      "available": "可用",
+      "buffCache": "Buff/Cache",
+      "usage": "使用率"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "总计",
+      "used": "已用",
+      "free": "空闲",
+      "usage": "使用率"
+    },
+    "disk": {
+      "title": "磁盘",
+      "filesystem": "文件系统",
+      "mount": "挂载点",
+      "total": "总计",
+      "used": "已用",
+      "available": "可用",
+      "usage": "使用率"
+    },
+    "os": {
+      "title": "操作系统",
+      "name": "OS",
+      "kernel": "内核",
+      "hostname": "主机名",
+      "uptime": "运行时间",
+      "usersOnline": "在线用户"
+    },
+    "network": {
+      "title": "网络",
+      "interface": "接口",
+      "status": "状态",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "在线",
+      "down": "离线",
+      "unknown": "未知"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "运行中",
+      "stopped": "已停止",
+      "containers": "容器"
+    },
+    "history": {
+      "label": "范围",
+      "last1h": "最近 1 小时",
+      "last6h": "最近 6 小时",
+      "last24h": "最近 24 小时",
+      "last7d": "最近 7 天",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "磁盘 %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "健康",
+      "warning": "警告",
+      "critical": "严重"
+    }
   },
   "audit": {
     "title": "审计日志",

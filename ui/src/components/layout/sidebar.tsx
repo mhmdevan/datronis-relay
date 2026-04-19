@@ -6,13 +6,14 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { Box, Flex, Text, Separator } from "@radix-ui/themes";
 import {
-  DashboardIcon,
-  PersonIcon,
-  MixIcon,
-  TimerIcon,
+  ActivityLogIcon,
   BarChartIcon,
-  ReaderIcon,
+  DashboardIcon,
   GearIcon,
+  MixIcon,
+  PersonIcon,
+  ReaderIcon,
+  TimerIcon,
 } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/adapters", labelKey: "adapters", icon: <MixIcon /> },
   { href: "/tasks", labelKey: "tasks", icon: <TimerIcon /> },
   { href: "/cost", labelKey: "cost", icon: <BarChartIcon /> },
+  { href: "/monitoring", labelKey: "monitoring", icon: <ActivityLogIcon /> },
   { href: "/audit", labelKey: "audit", icon: <ReaderIcon /> },
   { href: "/settings", labelKey: "settings", icon: <GearIcon /> },
 ];

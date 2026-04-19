@@ -23,8 +23,10 @@ import {
   configResponseSchema,
   costSummaryResponseSchema,
   dailyCostResponseSchema,
+  metricsHistoryResponseSchema,
   okResponseSchema,
   perUserCostResponseSchema,
+  serverMetricsResponseSchema,
   systemStatusSchema,
   taskResponseSchema,
   tasksResponseSchema,
@@ -327,6 +329,18 @@ export const api = {
         perUserCostResponseSchema,
         { signal },
       ).then((r) => r.rows),
+  },
+  monitoring: {
+    metrics: (signal?: AbortSignal) =>
+      fetchJson("/api/monitoring/metrics", serverMetricsResponseSchema, {
+        signal,
+      }).then((r) => r.metrics),
+    history: (hours: number, signal?: AbortSignal) =>
+      fetchJson(
+        `/api/monitoring/history${buildQuery({ hours })}`,
+        metricsHistoryResponseSchema,
+        { signal },
+      ).then((r) => r.points),
   },
   audit: {
     list: (params: AuditListParams = {}, signal?: AbortSignal) =>

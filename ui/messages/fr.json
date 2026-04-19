@@ -9,6 +9,7 @@
     "adapters": "Adaptateurs",
     "tasks": "Tâches planifiées",
     "cost": "Explorateur de coûts",
+    "monitoring": "Surveillance",
     "audit": "Journal d'audit",
     "settings": "Paramètres",
     "logout": "Déconnexion"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "Trier par ordre croissant",
     "sortDescending": "Trier par ordre décroissant"
+  },
+  "monitoring": {
+    "title": "Surveillance du serveur",
+    "subtitle": "Métriques serveur en temps réel, utilisation des ressources et état du système",
+    "loadError": "Échec du chargement des métriques du serveur",
+    "historyLoadError": "Échec du chargement de l'historique d'utilisation",
+    "noData": "Aucune donnée de surveillance disponible",
+    "refresh": "Actualiser",
+    "autoRefresh": "Actualisation automatique",
+    "collectedAt": "Dernière mise à jour",
+    "sections": {
+      "overview": "Vue d'ensemble du système",
+      "usage": "Utilisation des ressources",
+      "history": "Historique d'utilisation",
+      "network": "Interfaces réseau",
+      "disk": "Utilisation du disque"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "Modèle",
+      "cores": "Cœurs",
+      "usage": "Utilisation",
+      "loadAvg": "Charge moyenne"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "Total",
+      "used": "Utilisé",
+      "free": "Libre",
+      "available": "Disponible",
+      "buffCache": "Buff/Cache",
+      "usage": "Utilisation"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "Total",
+      "used": "Utilisé",
+      "free": "Libre",
+      "usage": "Utilisation"
+    },
+    "disk": {
+      "title": "Disque",
+      "filesystem": "Système de fichiers",
+      "mount": "Point de montage",
+      "total": "Total",
+      "used": "Utilisé",
+      "available": "Disponible",
+      "usage": "Utilisation"
+    },
+    "os": {
+      "title": "Système d'exploitation",
+      "name": "OS",
+      "kernel": "Noyau",
+      "hostname": "Nom d'hôte",
+      "uptime": "Temps d'activité",
+      "usersOnline": "Utilisateurs en ligne"
+    },
+    "network": {
+      "title": "Réseau",
+      "interface": "Interface",
+      "status": "Statut",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "ACTIF",
+      "down": "INACTIF",
+      "unknown": "Inconnu"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "En cours d'exécution",
+      "stopped": "Arrêté",
+      "containers": "Conteneurs"
+    },
+    "history": {
+      "label": "Plage",
+      "last1h": "Dernière heure",
+      "last6h": "6 dernières heures",
+      "last24h": "24 dernières heures",
+      "last7d": "7 derniers jours",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "Disque %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "Sain",
+      "warning": "Avertissement",
+      "critical": "Critique"
+    }
   },
   "audit": {
     "title": "Journal d'audit",

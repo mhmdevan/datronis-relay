@@ -9,6 +9,7 @@
     "adapters": "Adaptadores",
     "tasks": "Tareas programadas",
     "cost": "Costos",
+    "monitoring": "Monitoreo",
     "audit": "Registro de auditoría",
     "settings": "Configuración",
     "logout": "Cerrar sesión"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "Ordenar ascendente",
     "sortDescending": "Ordenar descendente"
+  },
+  "monitoring": {
+    "title": "Monitoreo del servidor",
+    "subtitle": "Métricas del servidor en tiempo real, uso de recursos y estado del sistema",
+    "loadError": "Error al cargar las métricas del servidor",
+    "historyLoadError": "Error al cargar el historial de uso",
+    "noData": "No hay datos de monitoreo disponibles",
+    "refresh": "Actualizar",
+    "autoRefresh": "Actualización automática",
+    "collectedAt": "Última actualización",
+    "sections": {
+      "overview": "Resumen del sistema",
+      "usage": "Uso de recursos",
+      "history": "Historial de uso",
+      "network": "Interfaces de red",
+      "disk": "Uso de disco"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "Modelo",
+      "cores": "Núcleos",
+      "usage": "Uso",
+      "loadAvg": "Carga promedio"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "Total",
+      "used": "Usado",
+      "free": "Libre",
+      "available": "Disponible",
+      "buffCache": "Buff/Cache",
+      "usage": "Uso"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "Total",
+      "used": "Usado",
+      "free": "Libre",
+      "usage": "Uso"
+    },
+    "disk": {
+      "title": "Disco",
+      "filesystem": "Sistema de archivos",
+      "mount": "Montaje",
+      "total": "Total",
+      "used": "Usado",
+      "available": "Disponible",
+      "usage": "Uso"
+    },
+    "os": {
+      "title": "Sistema operativo",
+      "name": "OS",
+      "kernel": "Kernel",
+      "hostname": "Nombre de host",
+      "uptime": "Tiempo activo",
+      "usersOnline": "Usuarios en línea"
+    },
+    "network": {
+      "title": "Red",
+      "interface": "Interfaz",
+      "status": "Estado",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "ACTIVO",
+      "down": "INACTIVO",
+      "unknown": "Desconocido"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "En ejecución",
+      "stopped": "Detenido",
+      "containers": "Contenedores"
+    },
+    "history": {
+      "label": "Rango",
+      "last1h": "Última hora",
+      "last6h": "Últimas 6 horas",
+      "last24h": "Últimas 24 horas",
+      "last7d": "Últimos 7 días",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "Disco %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "Saludable",
+      "warning": "Advertencia",
+      "critical": "Crítico"
+    }
   },
   "audit": {
     "title": "Registro de auditoría",

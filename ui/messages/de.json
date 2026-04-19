@@ -9,6 +9,7 @@
     "adapters": "Adapter",
     "tasks": "Geplante Aufgaben",
     "cost": "Kostenübersicht",
+    "monitoring": "Überwachung",
     "audit": "Audit-Protokoll",
     "settings": "Einstellungen",
     "logout": "Abmelden"
@@ -217,6 +218,95 @@
     },
     "sortAscending": "Aufsteigend sortieren",
     "sortDescending": "Absteigend sortieren"
+  },
+  "monitoring": {
+    "title": "Serverüberwachung",
+    "subtitle": "Echtzeit-Servermetriken, Ressourcennutzung und Systemzustand",
+    "loadError": "Servermetriken konnten nicht geladen werden",
+    "historyLoadError": "Nutzungsverlauf konnte nicht geladen werden",
+    "noData": "Keine Überwachungsdaten verfügbar",
+    "refresh": "Aktualisieren",
+    "autoRefresh": "Automatisch aktualisieren",
+    "collectedAt": "Zuletzt aktualisiert",
+    "sections": {
+      "overview": "Systemübersicht",
+      "usage": "Ressourcennutzung",
+      "history": "Nutzungsverlauf",
+      "network": "Netzwerkschnittstellen",
+      "disk": "Festplattennutzung"
+    },
+    "cpu": {
+      "title": "CPU",
+      "model": "Modell",
+      "cores": "Kerne",
+      "usage": "Auslastung",
+      "loadAvg": "Lastdurchschnitt"
+    },
+    "ram": {
+      "title": "RAM",
+      "total": "Gesamt",
+      "used": "Belegt",
+      "free": "Frei",
+      "available": "Verfügbar",
+      "buffCache": "Buff/Cache",
+      "usage": "Auslastung"
+    },
+    "swap": {
+      "title": "Swap",
+      "total": "Gesamt",
+      "used": "Belegt",
+      "free": "Frei",
+      "usage": "Auslastung"
+    },
+    "disk": {
+      "title": "Festplatte",
+      "filesystem": "Dateisystem",
+      "mount": "Einhängepunkt",
+      "total": "Gesamt",
+      "used": "Belegt",
+      "available": "Verfügbar",
+      "usage": "Auslastung"
+    },
+    "os": {
+      "title": "Betriebssystem",
+      "name": "OS",
+      "kernel": "Kernel",
+      "hostname": "Hostname",
+      "uptime": "Betriebszeit",
+      "usersOnline": "Benutzer online"
+    },
+    "network": {
+      "title": "Netzwerk",
+      "interface": "Schnittstelle",
+      "status": "Status",
+      "ipv4": "IPv4",
+      "ipv6": "IPv6",
+      "up": "AKTIV",
+      "down": "INAKTIV",
+      "unknown": "Unbekannt"
+    },
+    "docker": {
+      "title": "Docker",
+      "running": "Laufend",
+      "stopped": "Gestoppt",
+      "containers": "Container"
+    },
+    "history": {
+      "label": "Zeitraum",
+      "last1h": "Letzte Stunde",
+      "last6h": "Letzte 6 Stunden",
+      "last24h": "Letzte 24 Stunden",
+      "last7d": "Letzte 7 Tage",
+      "cpu": "CPU %",
+      "ram": "RAM %",
+      "disk": "Festplatte %",
+      "swap": "Swap %"
+    },
+    "gauge": {
+      "healthy": "Fehlerfrei",
+      "warning": "Warnung",
+      "critical": "Kritisch"
+    }
   },
   "audit": {
     "title": "Audit-Protokoll",

@@ -6,15 +6,16 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { IconButton, Box, Flex, Text, Separator } from "@radix-ui/themes";
 import {
-  HamburgerMenuIcon,
+  ActivityLogIcon,
+  BarChartIcon,
   Cross1Icon,
   DashboardIcon,
-  PersonIcon,
-  MixIcon,
-  TimerIcon,
-  BarChartIcon,
-  ReaderIcon,
   GearIcon,
+  HamburgerMenuIcon,
+  MixIcon,
+  PersonIcon,
+  ReaderIcon,
+  TimerIcon,
 } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/adapters", labelKey: "adapters", icon: <MixIcon /> },
   { href: "/tasks", labelKey: "tasks", icon: <TimerIcon /> },
   { href: "/cost", labelKey: "cost", icon: <BarChartIcon /> },
+  { href: "/monitoring", labelKey: "monitoring", icon: <ActivityLogIcon /> },
   { href: "/audit", labelKey: "audit", icon: <ReaderIcon /> },
   { href: "/settings", labelKey: "settings", icon: <GearIcon /> },
 ] as const;

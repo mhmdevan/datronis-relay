@@ -263,6 +263,98 @@ export const systemStatusSchema = z.object({
 export type SystemStatus = z.infer<typeof systemStatusSchema>;
 
 // ----------------------------------------------------------------------------
+// Server monitoring
+// ----------------------------------------------------------------------------
+
+export const cpuMetricsSchema = z.object({
+  model: z.string(),
+  cores: z.number().int(),
+  usage_percent: z.number(),
+  load_avg: z.tuple([z.number(), z.number(), z.number()]),
+});
+export type CpuMetrics = z.infer<typeof cpuMetricsSchema>;
+
+export const ramMetricsSchema = z.object({
+  total_bytes: z.number(),
+  used_bytes: z.number(),
+  free_bytes: z.number(),
+  available_bytes: z.number(),
+  buff_cache_bytes: z.number(),
+  usage_percent: z.number(),
+});
+export type RamMetrics = z.infer<typeof ramMetricsSchema>;
+
+export const swapMetricsSchema = z.object({
+  total_bytes: z.number(),
+  used_bytes: z.number(),
+  free_bytes: z.number(),
+  usage_percent: z.number(),
+});
+export type SwapMetrics = z.infer<typeof swapMetricsSchema>;
+
+export const diskMetricsSchema = z.object({
+  filesystem: z.string(),
+  mount: z.string(),
+  total_bytes: z.number(),
+  used_bytes: z.number(),
+  available_bytes: z.number(),
+  usage_percent: z.number(),
+});
+export type DiskMetrics = z.infer<typeof diskMetricsSchema>;
+
+export const networkInterfaceSchema = z.object({
+  name: z.string(),
+  status: z.enum(["up", "down", "unknown"]),
+  ipv4: z.string().nullable(),
+  ipv6: z.string().nullable(),
+});
+export type NetworkInterface = z.infer<typeof networkInterfaceSchema>;
+
+export const osInfoSchema = z.object({
+  name: z.string(),
+  kernel: z.string(),
+  hostname: z.string(),
+  uptime_seconds: z.number(),
+  users_online: z.number().int(),
+});
+export type OsInfo = z.infer<typeof osInfoSchema>;
+
+export const dockerInfoSchema = z.object({
+  running: z.boolean(),
+  containers: z.number().int(),
+});
+export type DockerInfo = z.infer<typeof dockerInfoSchema>;
+
+export const serverMetricsSchema = z.object({
+  cpu: cpuMetricsSchema,
+  ram: ramMetricsSchema,
+  swap: swapMetricsSchema,
+  disk: z.array(diskMetricsSchema),
+  os: osInfoSchema,
+  network: z.array(networkInterfaceSchema),
+  docker: dockerInfoSchema.nullable(),
+  collected_at: z.string(),
+});
+export type ServerMetrics = z.infer<typeof serverMetricsSchema>;
+
+export const serverMetricsResponseSchema = z.object({
+  metrics: serverMetricsSchema,
+});
+
+export const metricsHistoryPointSchema = z.object({
+  ts: z.string(),
+  cpu_percent: z.number(),
+  ram_percent: z.number(),
+  disk_percent: z.number(),
+  swap_percent: z.number(),
+});
+export type MetricsHistoryPoint = z.infer<typeof metricsHistoryPointSchema>;
+
+export const metricsHistoryResponseSchema = z.object({
+  points: z.array(metricsHistoryPointSchema),
+});
+
+// ----------------------------------------------------------------------------
 // App config (settings page)
 // ----------------------------------------------------------------------------
 
