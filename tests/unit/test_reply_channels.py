@@ -19,12 +19,16 @@ from datronis_relay.core.reply_channel import ReplyChannel
 
 
 class _FakeTelegramChat:
-    def __init__(self) -> None:
+    def __init__(self, *, reject_html: bool = False) -> None:
         self.sent: list[str] = []
         self.sent_parse_modes: list[str | None] = []
         self.typing_calls: int = 0
+        self._reject_html = reject_html
 
     async def send_message(self, text: str, **kwargs: Any) -> None:
+        if self._reject_html and kwargs.get("parse_mode") == "HTML":
+            from telegram.error import BadRequest
+            raise BadRequest("Can't parse entities")
         self.sent.append(text)
         self.sent_parse_modes.append(kwargs.get("parse_mode"))
 
@@ -103,6 +107,15 @@ class TestTelegramReplyChannelSpecifics:
         channel = TelegramReplyChannel(fake_chat)  # type: ignore[arg-type]
         await channel.send_text("<b>bold</b>")
         assert fake_chat.sent_parse_modes == ["HTML"]
+
+    async def test_send_text_falls_back_to_plain_on_bad_request(self) -> None:
+        fake_chat = _FakeTelegramChat(reject_html=True)
+        channel = TelegramReplyChannel(fake_chat)  # type: ignore[arg-type]
+        await channel.send_text("<b>hello</b> &amp; world")
+        # First attempt (HTML) was rejected, so only the fallback lands.
+        assert len(fake_chat.sent) == 1
+        assert fake_chat.sent[0] == "hello & world"
+        assert fake_chat.sent_parse_modes == [None]
 
     async def test_typing_task_fires_at_least_once(self) -> None:
         fake_chat = _FakeTelegramChat()

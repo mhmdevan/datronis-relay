@@ -2,16 +2,21 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import html as html_lib
+import re
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 
 import structlog
 from telegram import Bot, Chat
 from telegram.constants import ChatAction, ParseMode
+from telegram.error import BadRequest
 
 from datronis_relay.core.reply_channel import ReplyChannel
 
 log = structlog.get_logger(__name__)
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 # Telegram's hard cap is 4096 codepoints. Leave margin for the continuation
 # marker and any adapter-level prefixes.
@@ -28,10 +33,19 @@ class TelegramReplyChannel(ReplyChannel):
         self._chat = chat
 
     async def send_text(self, text: str) -> None:
-        await self._chat.send_message(text, parse_mode=ParseMode.HTML)
+        try:
+            await self._chat.send_message(text, parse_mode=ParseMode.HTML)
+        except BadRequest as exc:
+            log.warning("telegram.html_rejected", error=str(exc))
+            await self._chat.send_message(_strip_html(text))
 
     def typing_indicator(self) -> AbstractAsyncContextManager[None]:
         return _TelegramTypingIndicator(self._chat)
+
+
+def _strip_html(text: str) -> str:
+    """Strip HTML tags and unescape entities for plain-text fallback."""
+    return html_lib.unescape(_HTML_TAG_RE.sub("", text))
 
 
 class _TelegramTypingIndicator(AbstractAsyncContextManager[None]):
@@ -85,9 +99,15 @@ class TelegramBotReplyChannel(ReplyChannel):
         self._chat_id = chat_id
 
     async def send_text(self, text: str) -> None:
-        await self._bot.send_message(
-            chat_id=self._chat_id, text=text, parse_mode=ParseMode.HTML,
-        )
+        try:
+            await self._bot.send_message(
+                chat_id=self._chat_id, text=text, parse_mode=ParseMode.HTML,
+            )
+        except BadRequest as exc:
+            log.warning("telegram.html_rejected", error=str(exc))
+            await self._bot.send_message(
+                chat_id=self._chat_id, text=_strip_html(text),
+            )
 
     def typing_indicator(self) -> AbstractAsyncContextManager[None]:
         return _TelegramBotTypingIndicator(self._bot, self._chat_id)

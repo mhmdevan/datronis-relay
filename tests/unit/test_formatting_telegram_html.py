@@ -360,6 +360,66 @@ class TestRoundTrip:
         assert "<b>Full Server Configuration</b>" in full
         assert "<pre>" in full
 
+    def test_full_server_overview_renders_without_raw_markdown(self) -> None:
+        """Regression: the exact output the user reported as broken."""
+        md = (
+            "Here's a full overview of your server:\n\n"
+            "---\n\n"
+            "## 🧠 RAM Usage\n"
+            "| | Total | Used | Free | Available |\n"
+            "|---|---|---|---|---|\n"
+            "| **RAM** | 9.7 GB | 3.3 GB | 377 MB | 6.4 GB |\n"
+            "| **Swap** | 4.0 GB | 1.1 GB | 2.9 GB | — |\n\n"
+            "> **RAM Usage: 33.9%** — healthy. Swap is partially in use (27.5%), "
+            "which is normal.\n\n"
+            "---\n\n"
+            "## ⚙️ Full Server Configuration\n\n"
+            "### 🖥️ CPU\n"
+            "| Key | Value |\n"
+            "|---|---|\n"
+            "| Model | Intel Xeon E5-2697A v4 @ 2.60GHz |\n"
+            "| Architecture | x86_64 |\n"
+            "| vCPUs | 5 |\n"
+            "| Virtualization | KVM (Full VM) |\n\n"
+            "### 💿 OS / Kernel\n"
+            "| Key | Value |\n"
+            "|---|---|\n"
+            "| OS | **Ubuntu 24.04.4 LTS** (Noble Numbat) |\n"
+            "| Kernel | 6.8.0-106-generic |\n\n"
+            "### 📦 Disk\n"
+            "| Filesystem | Size | Used | Available | Use% |\n"
+            "|---|---|---|---|---|\n"
+            "| `/dev/vda1` (root) | 82 GB | 70 GB | 12 GB | **86%** ⚠️ |\n"
+            "| Total (all) | 333 GB | 278 GB | 56 GB | 84% |\n\n"
+            "> ⚠️ **Warning:** Root disk is at **86% usage** — consider cleaning "
+            "up or expanding.\n\n"
+            "### 🌐 Network\n"
+            "| Interface | Status | IP |\n"
+            "|---|---|---|\n"
+            "| `eth0` | ✅ UP | `148.253.215.174` (public IPv4) |\n"
+            "| `docker0` | DOWN | `172.17.0.1/16` |\n\n"
+            "### 🔔 Key Alerts:\n"
+            "1. **Disk at 86%** — monitor closely; free up space soon.\n"
+            "2. **Swap usage at 1.1 GB** — normal, but keep an eye on it.\n"
+            "3. Everything else looks healthy! ✅\n"
+        )
+        chunks = TelegramHtmlFormatter().format(md, max_chars=4000)
+        full = "\n\n".join(chunks)
+
+        # Raw markdown must never appear
+        assert "##" not in full, "Raw heading markers leaked"
+        assert "|---|" not in full, "Table separator rows leaked"
+        assert "**RAM**" not in full, "Raw bold markers leaked"
+
+        # Correct HTML must be present
+        assert "<b>" in full, "Missing bold tags"
+        assert "<pre>" in full, "Tables must be in <pre> blocks"
+        assert "<blockquote>" in full, "Blockquotes must use <blockquote>"
+
+        # Every chunk must fit Telegram's limit
+        for chunk in chunks:
+            assert len(chunk) <= 4000, f"Chunk exceeds limit: {len(chunk)} chars"
+
     def test_no_unescaped_angle_brackets_in_plain_text(self) -> None:
         # A paragraph with a `<` in the text must not produce an unescaped
         # `<` in the output (Telegram would reject the whole message).
