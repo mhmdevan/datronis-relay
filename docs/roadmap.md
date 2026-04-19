@@ -24,14 +24,14 @@
 | **Phase UI-4** | Settings + Polish — 5-section config form, restart dialog, dirty-aware save, RTL/a11y/bundle-budget verification | ✅ Complete |
 | **Phase UI-5** | Backend API — Python REST endpoints for `/api/users`, `/api/tasks`, `/api/adapters`, `/api/cost/*`, `/api/audit`, `/api/config`, `/api/restart` + bearer-token middleware | 🚧 Next |
 
-## Message formatting (planned)
+## Message formatting
 
 | Phase | Theme | Status |
 |---|---|---|
-| **Phase M-0** | Foundation — `MessageFormatter` port, `mistune` parser, chunker, passthrough fallback | 📅 Planned |
-| **Phase M-1** | Telegram HTML renderer — every element, tables → monospace `<pre>`, bidi-safe code blocks | 📅 Planned |
-| **Phase M-2** | Slack mrkdwn renderer — single-asterisk bold, `<url\|text>` links, shared chunker | 📅 Planned |
-| **Phase M-3** | Polish — parse-error fallback, long code block splitting, Prometheus counters, property tests | 📅 Planned |
+| **Phase M-0** | Foundation — `MessageFormatter` port, `mistune` parser, chunker, passthrough fallback | ✅ Complete |
+| **Phase M-1** | Telegram HTML renderer — every element, tables → monospace `<pre>`, bidi-safe code blocks | ✅ Complete |
+| **Phase M-2** | Slack mrkdwn renderer — single-asterisk bold, `<url\|text>` links, shared chunker | ✅ Complete |
+| **Phase M-3** | Polish — `strip_markdown` fallback, long code block splitting with `(part i/n)`, Prometheus counters, `hypothesis` property tests, 14 golden fixtures | ✅ **Complete** |
 | **Phase M-4** | Advanced — streaming edits, Discord, LaTeX, per-user formatting mode | 📅 Later |
 
 Per-phase breakdown, Definition-of-Done gates, and KPI targets for the

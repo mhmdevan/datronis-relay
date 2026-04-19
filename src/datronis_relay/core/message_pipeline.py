@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 
 import structlog
 
@@ -11,9 +11,10 @@ from datronis_relay.core.command_router import (
     Reply,
     StaticReply,
 )
+from datronis_relay.core.ports import MessageFormatter
 from datronis_relay.core.reply_channel import ReplyChannel
 from datronis_relay.domain.errors import RelayError
-from datronis_relay.domain.messages import PlatformMessage
+from datronis_relay.domain.messages import Platform, PlatformMessage
 from datronis_relay.infrastructure.logging import bind_correlation, clear_correlation
 
 log = structlog.get_logger(__name__)
@@ -34,9 +35,43 @@ class MessagePipeline:
     that a second adapter cannot silently drift in behavior.
     """
 
-    def __init__(self, auth: AuthGuard, router: CommandRouter) -> None:
+    def __init__(
+        self,
+        auth: AuthGuard,
+        router: CommandRouter,
+        formatter: MessageFormatter | None = None,
+        formatters: Mapping[Platform, MessageFormatter] | None = None,
+    ) -> None:
+        """Initialise the pipeline.
+
+        Args:
+            auth: authenticates inbound messages against the allowlist.
+            router: dispatches each message to the correct command.
+            formatter: fallback formatter used when `formatters` has no
+                entry for the inbound message's platform. If both
+                `formatter` and `formatters` are omitted, a private
+                in-core default preserves pre-Phase-M-0 behaviour.
+            formatters: per-platform formatter map. Preferred in
+                production (Phase M-1 onward) so Telegram can use
+                `TelegramHtmlFormatter` while Slack uses
+                `PassthroughFormatter`. Missing platforms fall through
+                to `formatter`.
+
+        Clean-Architecture note: neither parameter imports from
+        `infrastructure/formatting/` here — they are Protocols. The
+        composition root (`main.py`) is the only place that wires up
+        concrete formatters.
+        """
         self._auth = auth
         self._router = router
+        # Platform-specific formatters picked first, fall back to
+        # `formatter`, fall back to the in-core default last.
+        self._platform_formatters: dict[Platform, MessageFormatter] = dict(
+            formatters or {}
+        )
+        self._default_formatter: MessageFormatter = (
+            formatter or _DefaultChunkingFormatter()
+        )
 
     async def process(
         self,
@@ -53,18 +88,19 @@ class MessagePipeline:
         try:
             user = self._auth.authenticate(message)
             reply = await self._router.dispatch(message, user)
-            await self._deliver(channel, reply)
+            await self._deliver(channel, message.platform, reply)
         except RelayError as exc:
             log.warning(
                 "pipeline.relay_error",
                 category=exc.category.value,
                 error=str(exc),
             )
-            await self._safe_send(channel, exc.user_message())
+            await self._safe_send(channel, message.platform, exc.user_message())
         except Exception as exc:
             log.exception("pipeline.unexpected", error=str(exc))
             await self._safe_send(
                 channel,
+                message.platform,
                 f"[INTERNAL] unexpected error (ref: {message.correlation_id})",
             )
         finally:
@@ -73,15 +109,25 @@ class MessagePipeline:
 
     # ------------------------------------------------------------------ delivery
 
-    async def _deliver(self, channel: ReplyChannel, reply: Reply) -> None:
+    def _pick_formatter(self, platform: Platform) -> MessageFormatter:
+        """Return the formatter for `platform`, or the default if unset."""
+        return self._platform_formatters.get(platform, self._default_formatter)
+
+    async def _deliver(
+        self,
+        channel: ReplyChannel,
+        platform: Platform,
+        reply: Reply,
+    ) -> None:
         if isinstance(reply, StaticReply):
-            await self._send_chunked(channel, reply.text)
+            await self._send_chunked(channel, platform, reply.text)
             return
-        await self._deliver_stream(channel, reply.chunks)
+        await self._deliver_stream(channel, platform, reply.chunks)
 
     async def _deliver_stream(
         self,
         channel: ReplyChannel,
+        platform: Platform,
         chunks: AsyncIterator[str],
     ) -> None:
         buffer: list[str] = []
@@ -93,18 +139,48 @@ class MessagePipeline:
         if not full_text:
             await channel.send_text("(claude returned no content)")
             return
-        await self._send_chunked(channel, full_text)
+        await self._send_chunked(channel, platform, full_text)
 
-    async def _send_chunked(self, channel: ReplyChannel, text: str) -> None:
-        for chunk in chunk_message(text, limit=channel.max_message_length):
+    async def _send_chunked(
+        self,
+        channel: ReplyChannel,
+        platform: Platform,
+        text: str,
+    ) -> None:
+        formatter = self._pick_formatter(platform)
+        for chunk in formatter.format(text, max_chars=channel.max_message_length):
             await channel.send_text(chunk)
 
-    async def _safe_send(self, channel: ReplyChannel, text: str) -> None:
+    async def _safe_send(
+        self,
+        channel: ReplyChannel,
+        platform: Platform,
+        text: str,
+    ) -> None:
         """Like `_send_chunked` but never raises — used in error paths."""
         try:
-            await self._send_chunked(channel, text)
+            await self._send_chunked(channel, platform, text)
         except Exception as exc:
             log.error("pipeline.send_failed", error=str(exc))
+
+
+class _DefaultChunkingFormatter:
+    """Built-in fallback `MessageFormatter` used when none is injected.
+
+    Delegates to `core.chunking.chunk_message` so behaviour is identical
+    to the pre-Phase-M-0 code path. This keeps `MessagePipeline` usable
+    by unit tests that don't want to pull in `infrastructure/formatting/`
+    (Clean-Architecture boundary: core must not import from infrastructure).
+
+    Production wiring lives in `main.py` and passes a real
+    `PassthroughFormatter` — this class is never reached on the real
+    bot's send path.
+    """
+
+    def format(self, text: str, max_chars: int) -> list[str]:
+        if not text or not text.strip():
+            return []
+        return chunk_message(text, limit=max_chars)
 
 
 def _cleanup_attachments(message: PlatformMessage) -> None:

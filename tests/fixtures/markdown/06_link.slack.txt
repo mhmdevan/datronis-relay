@@ -1,0 +1,6 @@
+Read the <https://example.com/docs|official docs> for more info.
+
+A link with a `"title"` attribute: <https://example.com|example>.
+
+A bare URL: https://example.com/bare — should render as a clickable link
+on both platforms.

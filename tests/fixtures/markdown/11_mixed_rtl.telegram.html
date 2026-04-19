@@ -1,0 +1,14 @@
+This fixture tests mixed LTR/RTL content — English prose with an
+inline Farsi phrase and a code block.
+
+The server name is <b>prod-web-1</b> and the admin said:
+
+<blockquote>این سرور نیاز به ری‌استارت دارد</blockquote>
+
+Here is the relevant config:
+
+<pre><code class="language-yaml">server:
+  name: prod-web-1
+  region: ir-tehran-1</code></pre>
+
+After the restart, check <code>systemctl status nginx</code> to confirm.

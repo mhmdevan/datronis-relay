@@ -29,6 +29,7 @@ dependencies = [
     "PyYAML>=6.0",
     "prometheus-client>=0.20",
     "qrcode>=7.4",
+    "mistune>=3,<4",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
+    "hypothesis>=6.100",
     "ruff>=0.4",
     "mypy>=1.9",
 ]
@@ -91,6 +93,13 @@ ignore = [
 # a dispatch table would be worse, not better. The 2 in split-count logic
 # is a parser constant, not a magic number.
 "src/datronis_relay/core/command_router.py" = ["PLR0911", "PLR2004"]
+# The Telegram renderer is a natural if/elif chain over AST node types
+# (one per mistune token kind). A dispatch table would be harder to
+# follow because each branch does slightly different work with different
+# token shapes.
+"src/datronis_relay/infrastructure/formatting/telegram/renderer.py" = ["PLR0911"]
+# Same dispatch pattern for the Slack renderer.
+"src/datronis_relay/infrastructure/formatting/slack/renderer.py" = ["PLR0911"]
 # The `claude_agent_sdk` import is deferred on purpose so unit tests using
 # FakeClaude never need the real SDK installed.
 "src/datronis_relay/infrastructure/claude_client.py" = ["PLC0415"]
@@ -121,6 +130,7 @@ module = [
     "aiohttp.*",
     "aiosqlite.*",
     "qrcode.*",
+    "mistune.*",
 ]
 ignore_missing_imports = true
 

@@ -1,0 +1,16 @@
+Here's the server config, the classic case that motivated this whole
+roadmap:
+
+| Property       | Value                              |
+|----------------|------------------------------------|
+| **CPU model**  | Intel Xeon E5-2697A v4 @ 2.60 GHz  |
+| **vCores**     | 5                                  |
+| **Arch**       | x86_64 (64-bit)                    |
+| **Hypervisor** | KVM / QEMU                         |
+
+A 3-column table with right-aligned numbers:
+
+| Day | Tokens in | Tokens out |
+|-----|----------:|-----------:|
+| Mon |     1,234 |      2,345 |
+| Tue |     4,567 |      5,678 |

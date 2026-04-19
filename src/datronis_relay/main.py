@@ -30,6 +30,11 @@ from datronis_relay.domain.pricing import ModelPricing
 from datronis_relay.domain.user import User
 from datronis_relay.infrastructure.claude_client import ClaudeAgentClient
 from datronis_relay.infrastructure.config import AppConfig
+from datronis_relay.infrastructure.formatting import (
+    PassthroughFormatter,
+    SlackMrkdwnFormatter,
+    TelegramHtmlFormatter,
+)
 from datronis_relay.infrastructure.logging import configure_logging
 from datronis_relay.infrastructure.metrics import start_metrics_server
 from datronis_relay.infrastructure.sqlite_storage import SQLiteStorage
@@ -141,7 +146,21 @@ async def _run() -> None:
             max_scheduled_tasks_per_user=config.scheduler.max_tasks_per_user,
         )
         auth = AuthGuard(users=_build_users(config))
-        pipeline = MessagePipeline(auth=auth, router=router)
+        # Per-platform formatters:
+        #   Phase M-1: Telegram gets TelegramHtmlFormatter (real Telegram
+        #     HTML rendering — headings, lists, code, tables, etc.).
+        #   Phase M-2 (next): Slack gets SlackMrkdwnFormatter — today
+        #     it still uses PassthroughFormatter so Slack messages look
+        #     the same as before M-1.
+        pipeline = MessagePipeline(
+            auth=auth,
+            router=router,
+            formatter=PassthroughFormatter(),  # fallback
+            formatters={
+                Platform.TELEGRAM: TelegramHtmlFormatter(),
+                Platform.SLACK: SlackMrkdwnFormatter(),
+            },
+        )
 
         adapters = _build_adapters(config, pipeline)
         registry = AdapterRegistry(adapters=dict(adapters))

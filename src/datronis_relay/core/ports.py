@@ -60,6 +60,30 @@ class CostStoreProtocol(Protocol):
     async def summary(self, user_id: UserId) -> CostSummary: ...
 
 
+class MessageFormatter(Protocol):
+    """Transforms a Claude response into send-ready chunks for a platform.
+
+    Implementations are the only code that produces platform-specific markup
+    (Telegram HTML, Slack mrkdwn). They are called at the adapter boundary —
+    `MessagePipeline._send_chunked` — just before `ReplyChannel.send_text`.
+
+    Contract:
+      - `format()` MUST NOT raise on malformed input. On parse failure the
+        implementation should return the original text chunked naively.
+      - Empty / whitespace-only input returns `[]`.
+      - Each returned chunk MUST be ≤ `max_chars` codepoints.
+      - Returned chunks are in send order (first chunk first).
+      - `max_chars` is passed at call time (not as a ctor arg) so one
+        formatter instance can serve channels with different limits.
+
+    Phase M-0 ships `PassthroughFormatter` (no markup transformation, just
+    chunking). Phases M-1 and M-2 will ship `TelegramHtmlFormatter` and
+    `SlackMrkdwnFormatter`; the pipeline's call site does not change.
+    """
+
+    def format(self, text: str, max_chars: int) -> list[str]: ...
+
+
 class ScheduledTaskStoreProtocol(Protocol):
     """CRUD + claim interface for scheduled tasks.
 

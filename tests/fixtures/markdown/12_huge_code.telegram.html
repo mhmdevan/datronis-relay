@@ -1,0 +1,84 @@
+Here is a very long script that should trigger the code-block splitter
+at small chunk limits:
+
+<pre><code class="language-python">import sys
+import os
+import json
+import time
+import logging
+from pathlib import Path
+from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+CONFIG_PATH = Path("/etc/myapp/config.json")
+LOG_DIR = Path("/var/log/myapp")
+RETENTION_DAYS = 30
+
+def load_config():
+    """Load application configuration from disk."""
+    if not CONFIG_PATH.exists():
+        logger.warning("Config file not found at %s, using defaults", CONFIG_PATH)
+        return {"debug": False, "workers": 4, "timeout": 30}
+    with open(CONFIG_PATH) as f:
+        return json.load(f)
+
+def cleanup_old_logs(retention_days: int = RETENTION_DAYS):
+    """Remove log files older than retention_days."""
+    cutoff = datetime.now() - timedelta(days=retention_days)
+    removed = 0
+    for log_file in LOG_DIR.glob("*.log"):
+        mtime = datetime.fromtimestamp(log_file.stat().st_mtime)
+        if mtime &lt; cutoff:
+            log_file.unlink()
+            removed += 1
+            logger.info("Removed old log: %s", log_file.name)
+    logger.info("Cleanup complete: removed %d files", removed)
+    return removed
+
+def check_disk_space(threshold_pct: int = 80):
+    """Check if any mounted filesystem exceeds the threshold."""
+    import shutil
+    alerts = []
+    for mount in ["/", "/var", "/tmp", "/home"]:
+        try:
+            usage = shutil.disk_usage(mount)
+            pct = (usage.used / usage.total) * 100
+            if pct &gt; threshold_pct:
+                alerts.append(f"{mount}: {pct:.1f}% used")
+                logger.warning("Disk space alert: %s at %.1f%%", mount, pct)
+        except FileNotFoundError:
+            pass
+    return alerts
+
+def validate_config(config: dict) -&gt; list[str]:
+    """Validate configuration and return a list of issues."""
+    issues = []
+    if config.get("workers", 0) &lt; 1:
+        issues.append("workers must be &gt;= 1")
+    if config.get("timeout", 0) &lt; 5:
+        issues.append("timeout must be &gt;= 5 seconds")
+    if config.get("debug") and config.get("workers", 0) &gt; 1:
+        issues.append("debug mode should use workers=1")
+    return issues
+
+def main():
+    """Main entry point for the maintenance script."""
+    logger.info("Starting maintenance run at %s", datetime.now().isoformat())
+    config = load_config()
+    issues = validate_config(config)
+    if issues:
+        for issue in issues:
+            logger.error("Config issue: %s", issue)
+        sys.exit(1)
+    cleanup_old_logs()
+    alerts = check_disk_space()
+    if alerts:
+        logger.warning("Disk alerts: %s", "; ".join(alerts))
+    logger.info("Maintenance complete")
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+That was a long one.

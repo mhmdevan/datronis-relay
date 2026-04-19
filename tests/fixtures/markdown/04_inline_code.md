@@ -1,0 +1,3 @@
+The command `ls -la` lists files. Use `cd ..` to go up a directory.
+
+An escaped backtick inside code: `` `backtick` ``.

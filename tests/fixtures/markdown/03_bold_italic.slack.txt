@@ -1,0 +1,6 @@
+A line with *bold* text and _italic_ text and _*bold italic*_ text
+and even ~strikethrough~ for good measure.
+
+*Bold across the whole line.*
+
+_Italic across the whole line._
