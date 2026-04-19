@@ -27,6 +27,7 @@ from typing import Any
 
 import yaml
 
+from datronis_relay.cli.banner import print_banner
 from datronis_relay.cli.prompts import CliPrompter, Prompter
 
 # Telegram tokens look like "<numeric_bot_id>:<base64-ish secret>".
@@ -134,9 +135,7 @@ def run_setup(
 
 def _print_header(prompter: Prompter) -> None:
     prompter.say("")
-    prompter.say("=" * 60)
-    prompter.say("  datronis-relay setup wizard")
-    prompter.say("=" * 60)
+    print_banner(subtitle="setup wizard")
     prompter.say("")
     prompter.say("This wizard creates config.yaml and .env for you.")
     prompter.say("Press Ctrl+C at any time to abort.")
@@ -151,9 +150,8 @@ def _print_footer(
     ui_installed: bool = False,
 ) -> None:
     prompter.say("")
-    prompter.say("=" * 60)
-    prompter.say("  Setup complete")
-    prompter.say("=" * 60)
+    print_banner(subtitle="setup complete")
+    prompter.say("")
     prompter.say(f"  Config:  {options.config_path}")
     prompter.say(f"  Secrets: {options.env_path}")
     prompter.say("")

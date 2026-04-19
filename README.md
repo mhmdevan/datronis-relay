@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 datronis-relay
+<img src="datronis-relay-logo.png" alt="Datronis Relay" width="480">
 
 ### Run Claude Code from your phone. Stop paying Anthropic twice.
 
@@ -14,17 +14,6 @@
 [![ruff](https://img.shields.io/badge/lint-ruff-000000?logo=ruff)](https://github.com/astral-sh/ruff)
 [![i18n](https://img.shields.io/badge/i18n-6%20locales-4F46E5)](./ui/messages)
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](./Dockerfile)
-
-<!--
-DEMO GIF GOES HERE.
-Record a 20–30 second screencast: open Telegram → type "explain the last 50 lines
-of nginx access log on web-1" → bot streams a formatted reply.
-Save as docs/assets/demo.gif, then replace this placeholder block with:
-    <img src="docs/assets/demo.gif" alt="datronis-relay demo" width="640">
-Recording instructions: docs/assets/README.md
--->
-
-> 🎬 *30-second demo coming soon. See [`docs/assets/README.md`](./docs/assets/README.md) for the recording brief.*
 
 </div>
 
@@ -56,7 +45,31 @@ pip install -e .
 datronis-relay setup
 ```
 
-The wizard installs Claude Code, runs `claude login` with a **terminal-side QR code** so the OAuth URL is copy-pastable on a headless server, prompts for your Telegram/Slack tokens, writes `config.yaml`, and installs a hardened systemd unit. Done.
+The wizard walks you through everything:
+
+```
+╭────────────────────────────────────────────────────────────────────────────╮
+│  ██████╗  █████╗ ████████╗██████╗  ██████╗ ███╗   ██╗██╗███████╗           │
+│  ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║██║██╔════╝           │
+│  ██║  ██║███████║   ██║   ██████╔╝██║   ██║██╔██╗ ██║██║███████╗           │
+│  ██║  ██║██╔══██║   ██║   ██╔══██╗██║   ██║██║╚██╗██║██║╚════██║           │
+│  ██████╔╝██║  ██║   ██║   ██║  ██║╚██████╔╝██║ ╚████║██║███████║           │
+│  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝╚══════╝           │
+│                                                                            │
+│  ██████╗ ███████╗██╗      █████╗ ██╗   ██╗                                 │
+│  ██╔══██╗██╔════╝██║     ██╔══██╗╚██╗ ██╔╝                                 │
+│  ██████╔╝█████╗  ██║     ███████║ ╚████╔╝                                  │
+│  ██╔══██╗██╔══╝  ██║     ██╔══██║  ╚██╔╝                                   │
+│  ██║  ██║███████╗███████╗██║  ██║   ██║                                    │
+│  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝                                    │
+│                                                                            │
+│ self-hosted chat bridge for operators · secure · terminal-first            │
+│ setup wizard                                                               │
+│ v1.0.0                                                                     │
+╰────────────────────────────────────────────────────────────────────────────╯
+```
+
+It installs Claude Code, runs `claude login` with a **terminal-side QR code**, prompts for your Telegram/Slack tokens, writes `config.yaml`, installs a hardened **systemd service**, builds the **Next.js dashboard**, opens the firewall, and starts everything. Done.
 
 > **Manual install + Docker + systemd recipes:** see [`docs/installation.md`](./docs/installation.md).
 
@@ -66,7 +79,8 @@ The wizard installs Claude Code, runs `claude login` with a **terminal-side QR c
 
 - 📱 **Talk to your servers from anywhere.** Telegram + Slack today, Discord next.
 - 🎨 **Beautiful formatted messages.** Claude's markdown is converted to **native Telegram HTML** and **Slack mrkdwn** — headings, bold, code blocks with syntax hints, tables as monospace grids, blockquotes, lists. No more raw `##` or `|---|` leaking to the chat. Long code blocks split with `(part 1/3)` labels. *(Powered by `mistune` + custom per-platform renderers.)*
-- 🌐 **A real admin dashboard** (Next.js 15 + Radix UI) for users, scheduled tasks, adapters, cost, audit log, and live config. **No more SSH + YAML.**
+- 🌐 **A real admin dashboard** (Next.js 15 + Radix UI) for users, scheduled tasks, adapters, cost, audit log, **server monitoring**, and live config. **No more SSH + YAML.**
+- 📈 **Live server monitoring.** CPU, RAM, Disk, Swap gauges + historical area charts + network interfaces + Docker status — all in the browser, auto-collected from `/proc`.
 - 🌍 **6 languages out of the box.** English, Deutsch, Español, Français, 中文, 日本語. *(Locked by a key-parity test.)*
 - ⏰ **Scheduled recurring tasks.** *"Every morning at 8am, check disk space and ping me if over 80%"* — one chat command, one bot, forever.
 - 💰 **Per-user cost tracking + CSV export.** Tokens and USD spend, filtered by today / 7d / 30d / all-time.
@@ -100,6 +114,7 @@ The wizard installs Claude Code, runs `claude login` with a **terminal-side QR c
 | Per-user cost tracking in USD | ❌ | ❌ | internal only | ✅ SQLite ledger + CSV |
 | Append-only audit log | ❌ | limited | internal only | ✅ SQLite + cursor pagination |
 | Formatted messages (no raw `##` / `**`) | ❌ raw markdown | ❌ | ✅ | ✅ Telegram HTML + Slack mrkdwn |
+| Live server monitoring dashboard | ❌ | ❌ | ❌ | ✅ CPU/RAM/Disk/Network |
 | Clean Architecture + `mypy --strict` | ❌ | ❌ | — | ✅ 4 layers, zero cycles |
 | Built-in i18n | ❌ | ❌ | en only | ✅ en / de / es / fr / zh / ja |
 
@@ -156,6 +171,8 @@ MIT — see [`LICENSE`](./LICENSE). Copyright © 2019 Mohammad Eslamnia.
 ---
 
 <div align="center">
+
+<img src="datronis-relay-logo.png" alt="Datronis Relay" width="200">
 
 **Built with 🐍 Python, ⚙️ Clean Architecture, and 🤖 Claude Agent SDK.**
 *Star ⭐ the repo if it's useful — or fork it and make it yours.*

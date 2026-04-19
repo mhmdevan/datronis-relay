@@ -36,9 +36,10 @@ from datronis_relay.infrastructure.formatting import (
     TelegramHtmlFormatter,
 )
 from datronis_relay.infrastructure.logging import configure_logging
+from datronis_relay.api import ApiServer
+from datronis_relay.cli.banner import print_banner
 from datronis_relay.infrastructure.metrics import start_metrics_server
 from datronis_relay.infrastructure.sqlite_storage import SQLiteStorage
-from datronis_relay.api import ApiServer
 
 log = structlog.get_logger(__name__)
 
@@ -121,6 +122,8 @@ def _build_adapters(config: AppConfig, pipeline: MessagePipeline) -> dict[Platfo
 async def _run() -> None:
     config = AppConfig.load()
     configure_logging(level=config.logging.level, json_output=config.logging.json_output)
+    if sys.stdin.isatty():
+        print_banner()
     log.info("datronis.relay.start", version=__version__)
 
     storage = SQLiteStorage(config.storage.sqlite_path)
@@ -309,6 +312,8 @@ def _maybe_offer_first_run_setup() -> bool:
     if not sys.stdin.isatty():
         return False  # headless (Docker, systemd) — fail loudly via _run()
 
+    print_banner()
+    print()
     print(f"No config file found at {config_path}.")
     print()
     response = input("Run the setup wizard now? [Y/n]: ").strip().lower()
